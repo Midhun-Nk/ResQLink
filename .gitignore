@@ -7,6 +7,15 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+.env
+.env.local
+.env.*.local
+*/env
+frontend/.env
+frontend/.env.local
+frontend/env
+frontend/.env.*.local
+
 node_modules
 frontend/node_modules
 dist

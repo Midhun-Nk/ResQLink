@@ -1,150 +1,311 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Helmet } from "react-helmet";
+import React, { useState, useEffect } from "react";
+import { 
+  ShieldAlert, 
+  Mail, 
+  Lock, 
+  User, 
+  Building2, 
+  ArrowRight, 
+  Github, 
+  Activity,
+  Globe,
+  Wifi,
+  Database
+} from "lucide-react";
 
-// Social Icons UI Only
-const SocialIcon = ({ char }) => (
-  <a className="text-xl text-gray-400 hover:text-gray-600 transition">{char}</a>
-);
+// --- Configuration & Assets ---
 
-// LOGIN UI ONLY
-const LoginView = ({ onToggle }) => (
-  <section className="text-center w-full max-w-md">
-    <h2 className="text-4xl font-extrabold mb-1">Welcome to Emerald</h2>
-    <p className="text-gray-600 mb-10">Hotels & Resorts</p>
+const SLIDES = [
+  {
+    url: "https://images.unsplash.com/photo-1454789476662-53eb23ba5907?q=80&w=2552&auto=format&fit=crop",
+    title: "RAPID RESPONSE",
+    subtitle: "Real-time deployment tracking.",
+    coords: "34.0522° N, 118.2437° W",
+    status: "ACTIVE"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1588611910609-8e70498b965c?q=80&w=2669&auto=format&fit=crop",
+    title: "GLOBAL MONITOR",
+    subtitle: "Satellite-based prediction.",
+    coords: "51.5074° N, 0.1278° W",
+    status: "SCANNING"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?q=80&w=2670&auto=format&fit=crop",
+    title: "RESILIENCE NET",
+    subtitle: "Local network authorization.",
+    coords: "35.6762° N, 139.6503° E",
+    status: "SECURE"
+  }
+];
 
-    <form className="flex flex-col space-y-4">
-      <input type="email" placeholder="Email" className="p-3 border border-gray-300 rounded-lg" />
-      <input type="password" placeholder="Password" className="p-3 border border-gray-300 rounded-lg" />
+// --- Sub-Components ---
 
-      <a className="text-custom-red text-sm font-semibold text-right hover:underline pt-1">
-        Forgot password?
-      </a>
-
-      <div className="flex items-center py-2 text-gray-500 text-sm">
-        <div className="flex-grow border-t border-dashed border-gray-300"></div>
-        <span className="mx-4">or</span>
-        <div className="flex-grow border-t border-dashed border-gray-300"></div>
-      </div>
-
-      <button className="flex items-center justify-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-        <span className="text-xl mr-2 text-blue-600 font-bold">G</span> Login with Google
-      </button>
-
-      <button className="bg-red-600 text-white p-3 rounded-lg font-bold text-lg hover:bg-red-700 transition shadow-lg shadow-red-300">
-        Login
-      </button>
-    </form>
-
-    <p className="text-gray-700 text-sm mt-6">
-      Don't have an account?{" "}
-      <button onClick={() => onToggle(false)} className="text-custom-red font-semibold hover:underline">
-        Sign up
-      </button>
-    </p>
-
-    <div className="flex justify-center space-x-6 mt-8">
-      <SocialIcon char="f" /><SocialIcon char="t" /><SocialIcon char="in" /><SocialIcon char="ig" />
+const InputField = ({ icon: Icon, type, placeholder }) => (
+  <div className="relative mb-5 group">
+    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+      <Icon size={18} className="text-slate-400 group-focus-within:text-orange-500 transition-colors duration-300" />
     </div>
-  </section>
+    <input
+      type={type}
+      placeholder={placeholder}
+      className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm"
+    />
+    {/* Subtle glow effect on focus */}
+    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500/0 via-orange-500/0 to-orange-500/0 group-focus-within:from-orange-500/5 group-focus-within:via-orange-500/10 group-focus-within:to-orange-500/5 pointer-events-none transition-all duration-500" />
+  </div>
 );
 
-// REGISTER UI ONLY
-const RegisterView = ({ onToggle }) => (
-  <section className="text-center w-full max-w-md">
-    <h2 className="text-4xl font-extrabold mb-1">Join Emerald</h2>
-    <p className="text-gray-600 mb-10">Create your account to start booking</p>
-
-    <form className="flex flex-col space-y-4">
-      <input type="text" placeholder="Full Name" className="p-3 border border-gray-300 rounded-lg" />
-      <input type="email" placeholder="Email" className="p-3 border border-gray-300 rounded-lg" />
-      <input type="password" placeholder="Password" className="p-3 border border-gray-300 rounded-lg" />
-      <input type="password" placeholder="Confirm Password" className="p-3 border border-gray-300 rounded-lg" />
-
-      <button className="bg-red-600 text-white p-3 rounded-lg font-bold text-lg hover:bg-red-700 transition mt-4 shadow-lg shadow-red-300">
-        Register Account
-      </button>
-    </form>
-
-    <p className="text-gray-700 text-sm mt-6">
-      Already have an account?{" "}
-      <button onClick={() => onToggle(true)} className="text-custom-red font-semibold hover:underline">
-        Log in
-      </button>
-    </p>
-
-    <div className="flex justify-center space-x-6 mt-8">
-      <SocialIcon char="f" /><SocialIcon char="t" /><SocialIcon char="in" /><SocialIcon char="ig" />
-    </div>
-  </section>
+const SocialButton = ({ icon: Icon, label }) => (
+  <button className="flex items-center justify-center w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl text-slate-600 hover:text-slate-900 transition-all text-sm font-medium shadow-sm group">
+    <Icon size={18} className="mr-2 group-hover:scale-110 transition-transform" />
+    {label}
+  </button>
 );
 
-// BG images (same as original)
-const bg_images = ['login-bg.jpg','login-bg2.jpg','login-bg.jpg',];
+const HudCorner = ({ className }) => (
+  <div className={`absolute w-6 h-6 border-orange-500/50 ${className}`} />
+);
 
-// MAIN UI PURE REACT
+// --- Main LoginRegisterPagelication Component ---
+
 const LoginRegisterPage = () => {
   const [isLoginView, setIsLoginView] = useState(true);
-  const [currentBgIndex, setCurrentBgIndex] = useState(0);
-
-  const nextSlide = useCallback(() => {
-    setCurrentBgIndex((prev) => (prev + 1) % bg_images.length);
-  }, []);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(nextSlide, 5000);
-    return () => clearInterval(interval);
-  }, [nextSlide]);
+    setMounted(true);
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
+    }, 6000); 
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <>
-      <Helmet>
-        <title>{isLoginView ? "Login" : "Sign Up"}</title>
-        <style>{`.text-custom-red { color:#ff4757 }`}</style>
-      </Helmet>
+      <style>{`
+        @keyframes scan {
+          0% { top: 0%; opacity: 0; }
+          15% { opacity: 1; }
+          85% { opacity: 1; }
+          100% { top: 100%; opacity: 0; }
+        }
+        .animate-scan {
+          animation: scan 4s linear infinite;
+        }
+        .glass-panel {
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+        }
+      `}</style>
 
-      <main className="flex w-full justify-center items-center bg-white py-5 px-10 mt-20">
-        <div className="flex w-full h-[85vh] overflow-hidden rounded-3xl bg-white">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans text-slate-800 relative overflow-hidden">
+        
+        {/* Abstract Background Elements (Light Mode Optimized) */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-1/2 -left-1/2 w-[1000px] h-[1000px] bg-orange-500/5 rounded-full blur-3xl opacity-50 animate-pulse" />
+          <div className="absolute top-1/2 -right-1/4 w-[800px] h-[800px] bg-blue-500/5 rounded-full blur-3xl opacity-50" />
+          {/* Subtle geometric pattern for professional look */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+        </div>
 
-          {/* LEFT PANEL */}
-          <div className="relative w-5/12 p-10 text-white flex flex-col justify-between rounded-l-3xl">
+        {/* Main Card Container */}
+        <div className={`glass-panel rounded-3xl shadow-2xl w-full max-w-[1200px] h-[85vh] min-h-[650px] flex overflow-hidden relative border border-white/50 ring-1 ring-slate-900/5 transition-opacity duration-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+          
+          {/* LEFT PANEL: Immersive Visuals (Dark Contrast maintained for images) */}
+          <div className="hidden lg:flex lg:w-5/12 relative bg-slate-900 flex-col justify-between overflow-hidden group">
+            
+            {/* Background Images */}
+            {SLIDES.map((slide, index) => (
+              <div
+                key={index}
+                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                  index === currentSlide ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <img
+                  src={slide.url}
+                  alt={slide.title}
+                  className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-linear opacity-70 ${
+                    index === currentSlide ? "scale-110" : "scale-100"
+                  }`}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-slate-900/30" />
+              </div>
+            ))}
 
-            {/* FULLSCREEN BG IMAGE LIKE NEXT/IMAGE */}
-            <img
-              src={bg_images[currentBgIndex]}
-              className="absolute inset-0 w-full h-full object-cover duration-1000"
-              alt="bg"
-            />
-            <div className="absolute inset-0 bg-black opacity-40"></div>
+            {/* HUD Overlay Effects */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 w-full h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent animate-scan" />
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,255,255,0.02),rgba(0,0,0,0),rgba(255,255,255,0.02))] z-10 bg-[length:100%_4px,4px_100%] pointer-events-none" />
+              
+              {/* HUD Corners */}
+              <HudCorner className="top-8 left-8 border-t-2 border-l-2" />
+              <HudCorner className="top-8 right-8 border-t-2 border-r-2" />
+              <HudCorner className="bottom-8 left-8 border-b-2 border-l-2" />
+              <HudCorner className="bottom-8 right-8 border-b-2 border-r-2" />
+            </div>
 
-            <header className="relative z-10 flex justify-between items-center">
-              <span className="font-semibold text-lg">EMARALD</span>
+            {/* Top Branding */}
+            <div className="relative z-20 p-10">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="bg-orange-600 p-2.5 rounded-xl shadow-[0_0_20px_rgba(234,88,12,0.4)]">
+                  <ShieldAlert className="text-white" size={28} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-2xl tracking-tight text-white">SENTINEL</h3>
+                  <p className="text-orange-500 text-[10px] font-mono tracking-[0.2em] uppercase">Disaster Response OS</p>
+                </div>
+              </div>
+              
+              {/* Live Data Tickers */}
+              <div className="flex gap-4">
+                <div className="bg-slate-950/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-3 flex items-center space-x-3">
+                  <Wifi size={14} className="text-emerald-400 animate-pulse" />
+                  <span className="text-[10px] text-slate-400 font-mono">NET: ONLINE</span>
+                </div>
+                <div className="bg-slate-950/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-3 flex items-center space-x-3">
+                  <Database size={14} className="text-blue-400" />
+                  <span className="text-[10px] text-slate-400 font-mono">DB: SYNCED</span>
+                </div>
+              </div>
+            </div>
 
-              <nav className="flex space-x-4">
-                <button
-                  onClick={() => setIsLoginView(false)}
-                  className={`px-5 py-2 rounded-lg border font-semibold transition ${
-                    !isLoginView ? "bg-white text-black" : "text-white border-white"
-                  }`}>
-                  Sign Up
-                </button>
+            {/* Bottom Dynamic Info */}
+            <div className="relative z-20 p-10">
+              <div className="flex items-end justify-between mb-6">
+                <div>
+                  <div className="flex items-center space-x-2 text-orange-400 text-xs font-mono mb-2">
+                    <Activity size={12} />
+                    <span>{SLIDES[currentSlide].coords}</span>
+                  </div>
+                  <h2 className="text-4xl font-black text-white mb-2 tracking-tight">
+                    {SLIDES[currentSlide].title}
+                  </h2>
+                  <p className="text-slate-300 text-sm max-w-xs font-light leading-relaxed border-l-2 border-orange-500/50 pl-3">
+                    {SLIDES[currentSlide].subtitle}
+                  </p>
+                </div>
+                
+                {/* Status Badge */}
+                <div className="hidden xl:block">
+                  <div className="px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-[10px] font-bold tracking-wider">
+                    {SLIDES[currentSlide].status}
+                  </div>
+                </div>
+              </div>
 
-                <button
-                  onClick={() => setIsLoginView(true)}
-                  className={`px-5 py-2 rounded-lg border font-semibold transition ${
-                    isLoginView ? "bg-white text-black" : "text-white border-white"
-                  }`}>
-                  Join Us
-                </button>
-              </nav>
-            </header>
+              {/* Progress Bar */}
+              <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden flex">
+                {SLIDES.map((_, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`h-full transition-all duration-500 ease-out ${
+                      idx === currentSlide ? "bg-orange-500 flex-grow" : "bg-transparent flex-none w-0"
+                    }`} 
+                  />
+                ))}
+                {/* Background track for inactive slides */}
+                <div className="flex-grow bg-slate-800" />
+              </div>
+            </div>
           </div>
 
-          {/* RIGHT PANEL */}
-          <div className="w-7/12 flex justify-center items-center p-16">
-            {isLoginView ? <LoginView onToggle={setIsLoginView} /> : <RegisterView onToggle={setIsLoginView} />}
+          {/* RIGHT PANEL: Auth Forms (White Mode) */}
+          <div className="w-full lg:w-7/12 flex flex-col justify-center items-center p-8 lg:p-20 relative bg-white/40 backdrop-blur-sm">
+            
+            {/* Corner Decorative Elements */}
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <Globe size={120} className="text-slate-900 rotate-12" />
+            </div>
+
+            {/* Top Right Navigation */}
+            <div className="absolute top-8 right-8 flex items-center text-sm z-10">
+              <span className="text-slate-500 mr-3 hidden sm:inline">
+                {isLoginView ? "New agency?" : "Have credentials?"}
+              </span>
+              <button
+                onClick={() => setIsLoginView(!isLoginView)}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:text-orange-600 hover:border-orange-200 hover:bg-orange-50 transition-all font-medium bg-white shadow-sm"
+              >
+                {isLoginView ? "Initialize" : "Access Terminal"}
+              </button>
+            </div>
+
+            <div className="w-full max-w-md relative z-10">
+              {/* Header */}
+              <div className="mb-10">
+                <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">
+                  {isLoginView ? "Welcome Back" : "Agency Access"}
+                </h1>
+                <p className="text-slate-500 text-lg font-light">
+                  {isLoginView 
+                    ? "Enter your credentials to access the grid." 
+                    : "Register your unit for global dispatch."}
+                </p>
+              </div>
+
+              {/* Forms */}
+              <form className="space-y-4">
+                {!isLoginView && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputField icon={User} type="text" placeholder="Commander Name" />
+                    <InputField icon={Building2} type="text" placeholder="Unit ID" />
+                  </div>
+                )}
+                
+                <InputField icon={Mail} type="email" placeholder="Secure Email" />
+                <InputField icon={Lock} type="password" placeholder="Access Key" />
+                
+                {!isLoginView && (
+                   <InputField icon={Lock} type="password" placeholder="Confirm Key" />
+                )}
+
+                {isLoginView && (
+                  <div className="flex justify-between items-center mb-8 text-sm text-slate-500">
+                    <label className="flex items-center cursor-pointer hover:text-slate-700 transition-colors">
+                      <input type="checkbox" className="mr-2 rounded border-slate-300 text-orange-600 focus:ring-orange-500" />
+                      Keep session active
+                    </label>
+                    <a href="#" className="text-orange-600 hover:text-orange-700 transition-colors font-medium">Forgot Key?</a>
+                  </div>
+                )}
+
+                <button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center group relative overflow-hidden">
+                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 skew-y-12" />
+                  <span className="relative flex items-center">
+                    {isLoginView ? "AUTHENTICATE" : "ESTABLISH UPLINK"}
+                    <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
+                  </span>
+                </button>
+              </form>
+
+              {/* Divider */}
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white/80 px-4 text-slate-400 tracking-widest font-mono font-semibold">Or authorize via</span>
+                </div>
+              </div>
+
+              {/* Social / Federated Login */}
+              <div className="grid grid-cols-2 gap-4">
+                <SocialButton icon={Activity} label="SysAdmin" />
+                <SocialButton icon={Github} label="GitHub" />
+              </div>
+
+              {/* Footer */}
+              <p className="text-center text-xs text-slate-400 mt-10 font-mono">
+                SECURE CONNECTION • ENCRYPTED SHA-256
+              </p>
+            </div>
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 };
