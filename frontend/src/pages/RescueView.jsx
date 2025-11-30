@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { rescueTeamsData } from "../assets/data";
-import { RescueTeamCard } from "../components/RescueTeamCard";
+import RescueTeamCard from "../components/RescueTeamCard";
 
 export const RescueView = () => (
   <div className="animate-in fade-in duration-500">
@@ -10,7 +10,7 @@ export const RescueView = () => (
         <Plus size={18} /> Deploy New Unit
       </button>
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 w-full">
       {rescueTeamsData.map(team => <RescueTeamCard key={team.id} team={team} />)}
     </div>
   </div>

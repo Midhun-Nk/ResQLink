@@ -12,6 +12,7 @@ import {
   Wifi,
   Database
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // --- Configuration & Assets ---
 
@@ -70,7 +71,8 @@ const HudCorner = ({ className }) => (
 // --- Main LoginRegisterPagelication Component ---
 
 const LoginRegisterPage = () => {
-  const [isLoginView, setIsLoginView] = useState(true);
+    const navigate = useNavigate();
+  const [isLoginView, setIsLoginView] = useState();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [mounted, setMounted] = useState(false);
 
@@ -248,7 +250,9 @@ const LoginRegisterPage = () => {
               </div>
 
               {/* Forms */}
-              <form className="space-y-4">
+              <form className="space-y-4 " action={
+                    navigate('/')
+                }>
                 {!isLoginView && (
                   <div className="grid grid-cols-2 gap-4">
                     <InputField icon={User} type="text" placeholder="Commander Name" />
@@ -273,7 +277,7 @@ const LoginRegisterPage = () => {
                   </div>
                 )}
 
-                <button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center group relative overflow-hidden">
+                <button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center group relative overflow-hidden"  >
                   <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 skew-y-12" />
                   <span className="relative flex items-center">
                     {isLoginView ? "AUTHENTICATE" : "ESTABLISH UPLINK"}

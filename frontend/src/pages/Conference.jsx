@@ -23,7 +23,7 @@ export default function Conference() {
 
   let myMeeting = async (element) => {
     // 1. Generate Kit Token
-    const appID = import.meta.env.VITE_APP_ID; // TODO: Replace with your actual AppID
+    const appID = Number(import.meta.env.VITE_APP_ID); // TODO: Replace with your actual AppID
     const serverSecret = import.meta.env.VITE_SERVER_SECRET; // TODO: Replace with your actual ServerSecret
     const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
       appID, 

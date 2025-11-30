@@ -1,5 +1,5 @@
 import { AlertsView } from "./AlertsView";
-import { WeatherView } from "./WeatherView";
+import WeatherView from "./WeatherView";
 
 // Combined View for Dashboard > Weather & Alerts
 export const DashboardWeatherAlertsView = () => (
