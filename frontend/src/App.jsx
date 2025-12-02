@@ -11,6 +11,8 @@ import { Map as MapIcon, Heart, Shield, FileText, Phone } from "lucide-react";
 import MainLayout from "./components/layout/MainLayout";
 import { DashboardWeatherAlertsView } from "./pages/DashboardWeatherAlertsView";
 import LoginRegisterPage from "./pages/LoginPage";
+import SettingsPage from "./pages/SettingsPage";
+import EditProfile from "./pages/EditProfile";
 export default function App() {
   return (
     <Routes>
@@ -27,6 +29,9 @@ export default function App() {
         <Route path="/resource-requests" element={<PlaceholderView title="Resource Requests" icon={FileText} />} />
         <Route path="/contacts" element={<PlaceholderView title="Emergency Contacts" icon={Phone} />} />
         <Route path="/conference" element={<Conference />} />
+
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings-profile" element={<EditProfile section="profile" />} />
     
 
         <Route path="*" element={<PlaceholderView title="Page Not Found" icon={Shield} />} />

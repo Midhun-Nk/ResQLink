@@ -247,7 +247,8 @@ import {
   Menu, Search, Bell, Settings, 
   LayoutDashboard, CloudRain, AlertTriangle, Phone, Radio, 
   Shield, Heart, Map as MapIcon, FileText, Siren, 
-  Activity, LogOut
+  Activity, LogOut,
+  User
 } from 'lucide-react';
 
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
@@ -327,8 +328,8 @@ export default function MainLayout() {
             onSelect={navigateTo}
             isSidebarCollapsed={isMini}
             subItems={[
-              { id: "Dashboard Overview", label: "Overview" },
-              { id: "Weather Alerts", label: "Weather & Alerts" }
+                { id: "Dashboard Overview", label: "Overview", icon: LayoutDashboard },
+    { id: "Weather Alerts", label: "Weather & Alerts", icon: CloudRain }
             ]}
           />
 
@@ -350,11 +351,11 @@ export default function MainLayout() {
             onToggle={() => toggleMenu("Rescue")}
             onSelect={navigateTo}
             isSidebarCollapsed={isMini}
-            subItems={[
-              { id: "Rescue Channels", label: "Channels" },
-              { id: "Map Navigation", label: "Map Navigation" },
-              { id: "Resource Requests", label: "Resource Requests" },
-            ]}
+              subItems={[
+    { id: "Rescue Channels", label: "Channels", icon: Radio },
+    { id: "Map Navigation", label: "Map Navigation", icon: MapIcon },
+    { id: "Resource Requests", label: "Resource Requests", icon: FileText }
+  ]}
           />
 
           <SidebarItem icon={Heart} label="Donate" activeId={activeTab} onSelect={() => navigateTo("Donate")} isSidebarCollapsed={isMini} />
@@ -365,6 +366,20 @@ export default function MainLayout() {
           <SidebarItem icon={Shield} label="Safety Info" activeId={activeTab} onSelect={() => navigateTo("Safety Info")} isSidebarCollapsed={isMini} />
           <SidebarItem icon={Phone} label="Contacts" activeId={activeTab} onSelect={() => navigateTo("Contacts")} isSidebarCollapsed={isMini} />
           <SidebarItem icon={Settings} label="Settings" activeId={activeTab} onSelect={() => navigateTo("Settings")} isSidebarCollapsed={isMini} />
+            <SidebarItem
+            icon={Settings}
+            label="Settings"
+            activeId={activeTab}
+            isExpanded={expandedMenu === "Settings"}
+            onToggle={() => toggleMenu("Settings")}
+            onSelect={navigateTo}
+            isSidebarCollapsed={isMini}
+            subItems={[
+    { id: "Settings Profile", label: "Profile", icon: User },
+    { id: "Settings Security", label: "Security", icon: Shield },
+    { id: "Settings Notifications", label: "Notifications", icon: Bell }
+  ]}
+          />
 
         </div>
 

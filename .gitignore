@@ -6,6 +6,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.env
+backend/certs/ca.pem
 
 .env
 .env.local
@@ -14,6 +16,7 @@ lerna-debug.log*
 frontend/.env
 frontend/.env.local
 frontend/env
+backend/.env
 frontend/.env.*.local
 
 node_modules

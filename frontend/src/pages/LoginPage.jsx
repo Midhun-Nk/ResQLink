@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
+
 import { 
   ShieldAlert, 
   Mail, 
@@ -13,68 +15,53 @@ import {
   Database
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-// --- Configuration & Assets ---
-
-const SLIDES = [
-  {
-    url: "https://images.unsplash.com/photo-1454789476662-53eb23ba5907?q=80&w=2552&auto=format&fit=crop",
-    title: "RAPID RESPONSE",
-    subtitle: "Real-time deployment tracking.",
-    coords: "34.0522° N, 118.2437° W",
-    status: "ACTIVE"
-  },
-  {
-    url: "https://images.unsplash.com/photo-1588611910609-8e70498b965c?q=80&w=2669&auto=format&fit=crop",
-    title: "GLOBAL MONITOR",
-    subtitle: "Satellite-based prediction.",
-    coords: "51.5074° N, 0.1278° W",
-    status: "SCANNING"
-  },
-  {
-    url: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?q=80&w=2670&auto=format&fit=crop",
-    title: "RESILIENCE NET",
-    subtitle: "Local network authorization.",
-    coords: "35.6762° N, 139.6503° E",
-    status: "SECURE"
-  }
-];
-
-// --- Sub-Components ---
-
-const InputField = ({ icon: Icon, type, placeholder }) => (
-  <div className="relative mb-5 group">
-    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-      <Icon size={18} className="text-slate-400 group-focus-within:text-orange-500 transition-colors duration-300" />
-    </div>
-    <input
-      type={type}
-      placeholder={placeholder}
-      className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm"
-    />
-    {/* Subtle glow effect on focus */}
-    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-orange-500/0 via-orange-500/0 to-orange-500/0 group-focus-within:from-orange-500/5 group-focus-within:via-orange-500/10 group-focus-within:to-orange-500/5 pointer-events-none transition-all duration-500" />
-  </div>
-);
-
-const SocialButton = ({ icon: Icon, label }) => (
-  <button className="flex items-center justify-center w-full px-4 py-3 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-xl text-slate-600 hover:text-slate-900 transition-all text-sm font-medium shadow-sm group">
-    <Icon size={18} className="mr-2 group-hover:scale-110 transition-transform" />
-    {label}
-  </button>
-);
-
-const HudCorner = ({ className }) => (
-  <div className={`absolute w-6 h-6 border-orange-500/50 ${className}`} />
-);
-
-// --- Main LoginRegisterPagelication Component ---
+import { SLIDES } from "../assets/data";
+import { HudCorner, SocialButton } from "../components/common/SocialButton";
+import { InputField } from "../components/common/InputField";
+import axios from "axios";
 
 const LoginRegisterPage = () => {
+    const [fullName, setFullName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const navigate = useNavigate();
   const [isLoginView, setIsLoginView] = useState();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [mounted, setMounted] = useState(false);
+
+
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!email || !password || (!isLoginView && !fullName)) {
+    toast.error("Please fill all required fields");
+    return;
+  }
+
+  try {
+    const url = isLoginView
+      ? "http://localhost:5000/api/v1/auth/login"
+      : "http://localhost:5000/api/v1/auth/register";
+
+    const body = isLoginView
+      ? { email, password }
+      : { fullName, email, password };
+
+    const response = await axios.post(url, body);
+
+    // Store JWT token
+    localStorage.setItem("token", response.data.token);
+    localStorage.setItem("user", JSON.stringify(response.data.user));
+
+    toast.success(isLoginView ? "Login Successful" : "Registration Successful");
+
+    // Redirect to dashboard or homepage
+    navigate("/dashboard-overview");  // change route as needed
+
+  } catch (error) {
+    toast.error(error.response?.data?.message || "Something went wrong");
+  }
+};
 
   useEffect(() => {
     setMounted(true);
@@ -226,13 +213,13 @@ const LoginRegisterPage = () => {
             {/* Top Right Navigation */}
             <div className="absolute top-8 right-8 flex items-center text-sm z-10">
               <span className="text-slate-500 mr-3 hidden sm:inline">
-                {isLoginView ? "New agency?" : "Have credentials?"}
+                {isLoginView ? "New user?" : "Have credentials?"}
               </span>
               <button
                 onClick={() => setIsLoginView(!isLoginView)}
                 className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:text-orange-600 hover:border-orange-200 hover:bg-orange-50 transition-all font-medium bg-white shadow-sm"
               >
-                {isLoginView ? "Initialize" : "Access Terminal"}
+                {isLoginView ? "Register" : "Login"}
               </button>
             </div>
 
@@ -240,32 +227,28 @@ const LoginRegisterPage = () => {
               {/* Header */}
               <div className="mb-10">
                 <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-                  {isLoginView ? "Welcome Back" : "Agency Access"}
+                  {isLoginView ? "Welcome Back" : "User Access"}
                 </h1>
                 <p className="text-slate-500 text-lg font-light">
                   {isLoginView 
                     ? "Enter your credentials to access the grid." 
-                    : "Register your unit for global dispatch."}
+                    : " Create your account to join the response network."}
                 </p>
               </div>
 
               {/* Forms */}
-              <form className="space-y-4 " action={
-                    navigate('/')
-                }>
+              <form className="space-y-4 " >
                 {!isLoginView && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <InputField icon={User} type="text" placeholder="Commander Name" />
-                    <InputField icon={Building2} type="text" placeholder="Unit ID" />
+                  <div className="">
+                    <InputField icon={User} type="text" placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} />
+                    {/* <InputField icon={Building2} type="text" placeholder="Unit ID" /> */}
                   </div>
                 )}
                 
-                <InputField icon={Mail} type="email" placeholder="Secure Email" />
-                <InputField icon={Lock} type="password" placeholder="Access Key" />
+                <InputField icon={Mail} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+                <InputField icon={Lock} type="password" placeholder="Password " value={password} onChange={e => setPassword(e.target.value)} />
                 
-                {!isLoginView && (
-                   <InputField icon={Lock} type="password" placeholder="Confirm Key" />
-                )}
+           
 
                 {isLoginView && (
                   <div className="flex justify-between items-center mb-8 text-sm text-slate-500">
@@ -277,10 +260,10 @@ const LoginRegisterPage = () => {
                   </div>
                 )}
 
-                <button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center group relative overflow-hidden"  >
+                <button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center group relative overflow-hidden" onClick={handleSubmit}  >
                   <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 skew-y-12" />
                   <span className="relative flex items-center">
-                    {isLoginView ? "AUTHENTICATE" : "ESTABLISH UPLINK"}
+                    {isLoginView ? "AUTHENTICATE" : "ESTABLISH ACCESS"}
                     <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
                   </span>
                 </button>

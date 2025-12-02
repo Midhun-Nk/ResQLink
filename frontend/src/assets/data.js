@@ -39,3 +39,30 @@ export const alertsData = [
   { id: "A-2902", title: "Heavy Rainfall", area: "Northern Hills", severity: "Moderate", time: "1 hour ago", type: "Weather", affected: "500 People" },
   { id: "A-2903", title: "Landslide Risk", area: "Highway 9", severity: "Low", time: "3 hours ago", type: "Geological", affected: "Road Closed" },
 ];
+
+
+// --- Configuration & Assets ---
+
+export const SLIDES = [
+  {
+    url: "https://images.unsplash.com/photo-1454789476662-53eb23ba5907?q=80&w=2552&auto=format&fit=crop",
+    title: "RAPID RESPONSE",
+    subtitle: "Real-time deployment tracking.",
+    coords: "34.0522° N, 118.2437° W",
+    status: "ACTIVE"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?q=80&w=2670&auto=format&fit=crop",
+    title: "GLOBAL MONITOR",
+    subtitle: "Satellite-based prediction.",
+    coords: "51.5074° N, 0.1278° W",
+    status: "SCANNING"
+  },
+  {
+    url: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?q=80&w=2670&auto=format&fit=crop",
+    title: "RESILIENCE NET",
+    subtitle: "Local network authorization.",
+    coords: "35.6762° N, 139.6503° E",
+    status: "SECURE"
+  }
+];
