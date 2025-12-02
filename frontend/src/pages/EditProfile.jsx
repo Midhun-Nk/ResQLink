@@ -13,12 +13,14 @@ const EditProfile = () => {
   const [bloodGroup, setBloodGroup] = useState(user?.bloodGroup || "");
   const [profileImage, setProfileImage] = useState(user?.profile || "");
 
+  // LOCATION FIELDS (Now fetched correctly from user.location)
   const [country, setCountry] = useState(user?.location?.country || "");
   const [state, setState] = useState(user?.location?.state || "");
   const [city, setCity] = useState(user?.location?.city || "");
-  const [street, setStreet] = useState(user?.street || "");
-  const [pincode, setPincode] = useState(user?.pincode || "");
+  const [street, setStreet] = useState(user?.location?.street || "");
+  const [pincode, setPincode] = useState(user?.location?.pincode || "");
 
+  // Dynamic dropdown data
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
 
@@ -46,9 +48,13 @@ const EditProfile = () => {
           phoneNumber,
           bloodGroup,
           profile: profileImage,
-          location: { country, state, city },
-          street,
-          pincode
+          location: {
+            country,
+            state,
+            city,
+            street,
+            pincode
+          }
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -62,7 +68,6 @@ const EditProfile = () => {
 
   return (
     <div className="flex items-center justify-center p-6 bg-slate-50">
-
       <div className="glass-panel w-full p-10 rounded-3xl shadow-xl border border-white/40">
 
         {/* Profile Upload */}
@@ -75,11 +80,19 @@ const EditProfile = () => {
               src={profileImage || "https://i.ibb.co/4pDNDk1/avatar.png"}
               className="w-full h-full object-cover"
             />
+
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
               <Camera size={28} className="text-white" />
             </div>
           </div>
-          <input type="file" accept="image/*" ref={fileRef} onChange={handleImageChange} className="hidden" />
+
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileRef}
+            onChange={handleImageChange}
+            className="hidden"
+          />
         </div>
 
         <h1 className="text-4xl font-bold mb-1 text-slate-900">Edit Profile</h1>
@@ -147,7 +160,7 @@ const EditProfile = () => {
             />
           </div>
 
-          {/* ROW 3 → Pincode (Full width) */}
+          {/* ROW 3 → Pincode */}
           <InputField
             icon={MapPin}
             value={pincode}

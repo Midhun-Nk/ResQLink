@@ -52,22 +52,17 @@ const User = sequelize.define("User", {
     allowNull: true,
   },
 
+  // ⭐ ALL LOCATION RELATED DATA INSIDE ONE JSON
   location: {
     type: DataTypes.JSON,
     allowNull: true,
-  },
-
-  // ⭐ NEW FIELDS ADDED
-  street: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    validate: { len: [3, 150] }
-  },
-
-  pincode: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    validate: { len: [4, 10] }
+    defaultValue: {
+      country: "",
+      state: "",
+      city: "",
+      street: "",
+      pincode: ""
+    }
   }
 
 }, {

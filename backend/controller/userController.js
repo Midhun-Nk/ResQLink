@@ -83,45 +83,35 @@ export const loginUser = async (req, res) => {
 // =========================
 // 📌 UPDATE PROFILE
 // =========================
-
 export const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id; // from auth middleware
+    const userId = req.user.id;
 
     const { 
       fullName, 
       phoneNumber, 
       bloodGroup, 
       profile, 
-      location,
-      street,
-      pincode
+      location 
     } = req.body;
-
-    // Basic validation
-    if (phoneNumber && phoneNumber.length < 10) {
-      return res.status(400).json({ message: "Phone number must be valid" });
-    }
 
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Update only provided fields
     user.fullName = fullName ?? user.fullName;
     user.phoneNumber = phoneNumber ?? user.phoneNumber;
     user.bloodGroup = bloodGroup ?? user.bloodGroup;
     user.profile = profile ?? user.profile;
 
-    // 👉 NEW FIELDS ADDED
-    user.street = street ?? user.street;
-    user.pincode = pincode ?? user.pincode;
-
-    // Location object: { country, state, city }
-    user.location = location ?? user.location;
+    // ⭐ Store EVERYTHING in JSON
+    user.location = {
+      ...user.location,
+      ...location
+    };
 
     await user.save();
 
-    return res.status(200).json({
+    res.status(200).json({
       message: "Profile updated successfully",
       user
     });
@@ -131,3 +121,4 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Something went wrong", error: err.message });
   }
 };
+

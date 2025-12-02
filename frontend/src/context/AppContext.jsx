@@ -4,48 +4,15 @@ import axios from "axios";
 const AppContext = createContext();
 
 const baseURL = import.meta.env.VITE_API_URL;
-const googleAuthURL = import.meta.env.VITE_GOOGLE_URL;
 
 export const AppProvider = ({ children }) => {
-  const [hotelData, setHotelData] = useState(null);
   const [user, setUser] = useState(null);
 
-  // -------------------------------------------------------
-  // 🔵 GOOGLE LOGIN → Redirect to backend
-  // -------------------------------------------------------
-  const loginWithGoogle = () => {
-    window.location.href = `${googleAuthURL}/auth/google`;
-  };
-
-  // -------------------------------------------------------
-  // 🔵 Handle Google Login Success → Tokens + User
-  // Called in /auth/google/page.jsx
-  // -------------------------------------------------------
-  const handleGoogleLoginSuccess = async (access, refresh, userData) => {
-    try {
-      // Save tokens
-      localStorage.setItem("accessToken", access);
-      localStorage.setItem("refreshToken", refresh);
-
-      // Save user
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
-    } catch (err) {
-      console.error("Google OAuth handling failed:", err);
-    }
-  };
-
-  // -------------------------------------------------------
-  // Restore user on refresh
-  // -------------------------------------------------------
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  // -------------------------------------------------------
-  // Axios instance
-  // -------------------------------------------------------
   const api = axios.create({
     baseURL,
     headers: { "Content-Type": "application/json" },
@@ -54,7 +21,7 @@ export const AppProvider = ({ children }) => {
   // Attach access token automatically
   api.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("token");
       if (token) config.headers.Authorization = `Bearer ${token}`;
       return config;
     },
@@ -105,40 +72,25 @@ export const AppProvider = ({ children }) => {
   // Logout
   // -------------------------------------------------------
   const logout = () => {
-    localStorage.removeItem("accessToken");
+    localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     setUser(null);
     window.location.href = "/login";
   };
 
-  // -------------------------------------------------------
-  // Fetch hotel data
-  // -------------------------------------------------------
-  const fetchHotelData = async () => {
-    try {
-      const { data } = await api.get("/hotels/");
-      setHotelData(data);
-    } catch (error) {
-      console.error("Error fetching hotel data:", error);
-    }
-  };
 
-  useEffect(() => {
-    fetchHotelData();
-  }, []);
-
+ 
   return (
     <AppContext.Provider
       value={{
-        hotelData,
-        setHotelData,
+    
+      
         api,
         user,
         
         setUser,
-        loginWithGoogle,
-        handleGoogleLoginSuccess,
+
         logout,
       }}
     >

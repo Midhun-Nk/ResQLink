@@ -71,7 +71,7 @@ const ConferenceChannelCard = ({ channel, onJoin }) => {
           <button onClick={() => onJoin(channel.id, 'audio')} className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors">
             <Mic size={16} /> Listen
           </button>
-          <button onClick={() => navigate('/conference')} className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-white font-semibold text-sm shadow-md shadow-${theme.btn.split('-')[1]}-200 ${theme.btn} transition-transform active:scale-95`}>
+          <button onClick={() => navigate(`/conference/${channel.id}`)}className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-white font-semibold text-sm shadow-md shadow-${theme.btn.split('-')[1]}-200 ${theme.btn} transition-transform active:scale-95`}>
             <Video size={16} /> Join
           </button>
         </div>
