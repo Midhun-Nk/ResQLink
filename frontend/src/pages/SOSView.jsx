@@ -1,18 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { io } from "socket.io-client"; // Import Socket.io
 import { 
   Siren, 
   MapPin, 
   AlertTriangle, 
-  Loader2, 
   CheckCircle2, 
   X,
-  ShieldCheck,
   Radio
 } from "lucide-react";
+
+// REPLACE WITH YOUR ACTUAL BACKEND URL
+const SOCKET_URL = "http://localhost:5000"; 
 
 export const SOSView = () => {
   const [status, setStatus] = useState('idle'); // idle | confirming | locating | sent
   const [coords, setCoords] = useState(null);
+  const [socket, setSocket] = useState(null);
+
+  // 1. Initialize Socket Connection on Component Mount
+  useEffect(() => {
+    const newSocket = io(SOCKET_URL);
+    setSocket(newSocket);
+
+    // Cleanup: Disconnect when component unmounts
+    return () => newSocket.close();
+  }, []);
 
   const handleSOSClick = () => {
     if (status === 'idle') {
@@ -27,6 +39,19 @@ export const SOSView = () => {
   const confirmEmergency = () => {
     setStatus('locating');
 
+    // 2. Retrieve User Data from Local Storage
+    // We try/catch this in case JSON parse fails or data is missing
+    let userData = {};
+    try {
+        const storedUser = localStorage.getItem("user"); // Change "user" to your specific key
+        if (storedUser) {
+            userData = JSON.parse(storedUser);
+        }
+    } catch (error) {
+        console.error("Failed to load user data", error);
+        userData = { name: "Unknown", id: "Guest" }; // Fallback
+    }
+
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
       setStatus('idle');
@@ -36,20 +61,33 @@ export const SOSView = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const locationData = {
-            lat: latitude,
-            lng: longitude,
+        
+        // 3. Prepare the Complete Payload (Location + User Info)
+        const emergencyPayload = {
+            userId: userData._id || userData.id || 'guest',
+            userName: userData.fullName || userData.userName || 'Anonymous',
+            contactNumber: userData.phoneNumber || 'N/A',
+            location: {
+                lat: latitude,
+                lng: longitude,
+                accuracy: position.coords.accuracy,
+            },
             timestamp: new Date().toISOString(),
-            accuracy: position.coords.accuracy
+            status: "CRITICAL",
+            message: "SOS Button Triggered"
         };
         
-        setCoords(locationData);
+        setCoords({ lat: latitude, lng: longitude });
 
-        // --- MOCK BACKEND CALL ---
-        console.log("🚀 [EMERGENCY API TRIGGERED]");
-        console.log("📍 PRECISE LOCATION SENT:", locationData);
-        // -------------------------
+        // 4. Emit to Backend via Socket
+        if (socket) {
+            console.log("🚀 [EMITTING SOS]", emergencyPayload);
+            socket.emit("send_sos_alert", emergencyPayload); 
+        } else {
+            console.error("Socket not connected");
+        }
 
+        // Simulate network delay for UX (or listen for a 'received' event from server)
         setTimeout(() => {
             setStatus('sent');
         }, 1500);
@@ -66,7 +104,7 @@ export const SOSView = () => {
   return (
     <div className="relative min-h-[600px] w-full bg-red-50 flex flex-col items-center justify-center p-6 overflow-hidden rounded-xl border border-red-100 font-sans">
       
-      {/* Background Pulse Animation (Red Ripples on White) */}
+      {/* Background Pulse Animation */}
       <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
         <div className="w-[600px] h-[600px] border border-red-200 rounded-full animate-ping [animation-duration:3s]"></div>
         <div className="absolute w-[400px] h-[400px] border border-red-300 rounded-full animate-ping [animation-duration:3s] [animation-delay:1s]"></div>
@@ -77,8 +115,8 @@ export const SOSView = () => {
         <div className="z-10 flex flex-col items-center animate-in zoom-in duration-500">
            {/* Status Badge */}
            <div className="mb-10 flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-red-100 shadow-sm text-gray-500 text-xs font-bold tracking-wider">
-              <Radio size={14} className="text-emerald-500 animate-pulse" />
-              GPS SIGNAL: ACTIVE
+              <Radio size={14} className={`text-emerald-500 ${socket?.connected ? 'animate-pulse' : 'text-gray-400'}`} />
+              {socket?.connected ? 'SYSTEM: ONLINE' : 'CONNECTING...'}
            </div>
 
            {/* The Main Button */}
@@ -86,15 +124,9 @@ export const SOSView = () => {
              onClick={handleSOSClick}
              className="group relative w-72 h-72 rounded-full flex flex-col items-center justify-center transition-transform hover:scale-105 active:scale-95"
            >
-             {/* Outer Soft Shadow/Glow */}
              <div className="absolute inset-0 rounded-full bg-red-200 blur-xl opacity-50 group-hover:opacity-80 transition-opacity duration-500"></div>
-             
-             {/* Main Circle */}
              <div className="relative w-full h-full rounded-full bg-gradient-to-br from-red-500 to-red-700 shadow-xl border-4 border-red-400 flex flex-col items-center justify-center z-10">
-                
-                {/* Spinning Dashed Ring */}
                 <div className="absolute inset-4 rounded-full border-2 border-white/30 border-dashed animate-[spin_12s_linear_infinite]"></div>
-                
                 <Siren size={80} className="text-white mb-2 drop-shadow-md" />
                 <span className="text-5xl font-black text-white tracking-widest drop-shadow-sm">SOS</span>
                 <span className="text-red-100 text-xs font-bold tracking-[0.2em] mt-2 group-hover:text-white transition-colors">TAP FOR HELP</span>
@@ -110,7 +142,7 @@ export const SOSView = () => {
       {/* --- CONFIRMATION DIALOG --- */}
       {status === 'confirming' && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white p-8 rounded-3xl max-w-sm w-full mx-4 shadow-2xl text-center border border-gray-100 transform transition-all scale-100">
+          <div className="bg-white p-8 rounded-3xl max-w-sm w-full mx-4 shadow-2xl text-center border border-gray-100">
             <div className="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
               <AlertTriangle size={32} className="text-red-600" />
             </div>
@@ -140,11 +172,8 @@ export const SOSView = () => {
       {status === 'locating' && (
         <div className="z-10 flex flex-col items-center text-center animate-in fade-in">
            <div className="relative w-32 h-32 mb-8 flex items-center justify-center">
-              {/* Outer Ring */}
               <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-              {/* Spinning Ring */}
               <div className="absolute inset-0 border-4 border-t-red-500 rounded-full animate-spin"></div>
-              {/* Center Icon */}
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
                 <MapPin size={32} className="text-red-500 animate-bounce" />
               </div>

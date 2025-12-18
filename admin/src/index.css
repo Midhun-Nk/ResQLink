@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+
+/* Container for the routing instructions */
+.leaflet-routing-container {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+  border: none !important;
+  font-family: 'Roboto', Arial, sans-serif;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Style the instruction steps */
+.leaflet-routing-alt {
+  max-height: none !important;
+  border-bottom: 1px solid #eee;
+}
+
+/* Modernize the waypoint icons if needed */
+.leaflet-marker-icon {
+  filter: drop-shadow(0px 3px 2px rgba(0,0,0,0.3));
+}
+
+/* Hide the 'X' button and table borders for a cleaner look */
+.leaflet-routing-collapse-btn {
+  top: 10px;
+  right: 10px;
+}
