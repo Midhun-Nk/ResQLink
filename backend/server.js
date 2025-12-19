@@ -30,13 +30,34 @@ const io = new Server(httpServer, {
 io.on("connection", (socket) => {
   console.log(`⚡: User Connected: ${socket.id}`);
 
-  // --- LISTEN FOR SOS ---
+  // --- 🛠️ TEST MODE: SEND DUMMY CALICUT VICTIM ---
+  // This triggers 3 seconds after you refresh your admin panel
+  setTimeout(() => {
+    console.log("⚠️ SIMULATING CALICUT SOS ALERT...");
+    
+    const dummyData = {
+      userName: "Rahul (Test Victim)",
+      contactNumber: "+91 98765 43210",
+      location: {
+        // Coordinates for Calicut (Kozhikode), Kerala
+        lat: 11.2588, 
+        lng: 75.7804,
+        accuracy: 15 // meters
+      },
+      timestamp: new Date().toISOString()
+    };
+
+    // Emit to your admin panel (same event name as real alerts)
+    socket.emit("alert_rescue_team", dummyData);
+  }, 3000); 
+
+  // --- LISTEN FOR REAL SOS ---
   socket.on("send_sos_alert", (data) => {
-    console.log("🚨 SOS ALERT RECEIVED!");
+    console.log("🚨 REAL SOS ALERT RECEIVED!");
     console.log("👤 Victim:", data.userName);
     console.log("📍 Location:", data.location);
 
-    // --- BROADCAST TO ADMIN PANEL ---
+    // Broadcast to admin panel
     io.emit("alert_rescue_team", data);
   });
 
@@ -44,7 +65,6 @@ io.on("connection", (socket) => {
     console.log("User Disconnected", socket.id);
   });
 });
-
 app.use('/api/v1/auth', userRoutes);
 
 app.get('/', (req, res) => {

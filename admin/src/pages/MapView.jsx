@@ -57,7 +57,7 @@ function DynamicRouting({ destination }) {
   return null;
 }
 
-export default function App() {
+export default function MapView() {
   const destination = L.latLng(11.4401756, 75.7661471); // Pune/Destination
 
   return (
