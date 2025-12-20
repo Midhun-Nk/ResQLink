@@ -3,26 +3,29 @@ import {
   Menu, Search, Bell, Settings, 
   LayoutDashboard, CloudRain, AlertTriangle, Phone, Radio, 
   Shield, Heart, Map as MapIcon, FileText, Siren, 
-  Activity, LogOut,
-  User,
-  Users
+  Activity, LogOut, User, Users,
+  Moon, Sun 
 } from 'lucide-react';
 
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { SidebarItem } from '../SidebarItem';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function MainLayout() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme(); 
+  const isDark = theme === 'dark';
 
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [expandedMenu, setExpandedMenu] = useState("Dashboard");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Sync tab with URL
+  const { user } = useApp();
+
   useEffect(() => {
     let tab = location.pathname.replace("/", "").replace(/-/g, " ");
     if (tab.length === 0) tab = "Dashboard";
@@ -51,14 +54,21 @@ export default function MainLayout() {
 
   const isMini = isSidebarCollapsed && !isMobileOpen;
 
-  const {user}= useApp();
-
   return (
-    <div className="min-h-screen bg-gray-50 overflow-hidden font-sans">
+    // MAIN CONTAINER - "Midnight Onyx" Theme
+    // Light Mode: Gray-50
+    // Dark Mode: #050505 (Deep pure black)
+    <div className="min-h-screen bg-gray-50 dark:bg-[#050505] overflow-hidden font-sans transition-colors duration-300 text-gray-900 dark:text-gray-100 selection:bg-red-500/30">
 
-      {/* SIDEBAR */}
+      {/* --- SIDEBAR --- */}
       <div 
-        className={`fixed top-0 left-0 h-screen bg-white z-50 transition-all duration-300 border-r border-gray-100 shadow-sm flex flex-col
+        className={`fixed top-0 left-0 h-screen z-50 transition-all duration-300 flex flex-col
+          /* Light Mode: White & Gray Border */
+          bg-white border-r border-gray-100
+          
+          /* Dark Mode: "Smoked Glass" Style */
+          dark:bg-[#0a0a0a]/90 dark:backdrop-blur-xl dark:border-white/10
+
           ${isMobileOpen ? 'translate-x-0 w-[280px]' : (isSidebarCollapsed ? 'w-[80px]' : 'w-[280px]')}
           ${!isMobileOpen && 'hidden lg:flex'}
           ${isMobileOpen && 'block'}
@@ -66,16 +76,15 @@ export default function MainLayout() {
         `}
       >
 
-        {/* Brand */}
+        {/* Brand Section */}
         <div className={`p-6 flex items-center gap-3 mb-2 h-[88px] ${isMini ? 'justify-center' : ''}`}>
-          <div className="bg-red-600 rounded-lg flex items-center justify-center text-white font-bold w-10 h-10 shadow-lg">
+          <div className="bg-red-600 rounded-xl flex items-center justify-center text-white font-bold w-10 h-10 shadow-lg shadow-red-600/20 ring-2 ring-red-500/20">
             <Activity size={24} />
           </div>
-          {!isMini && <h3 className="font-bold text-2xl text-gray-900">ResQ<span className="text-red-600">Link</span></h3>}
+          {!isMini && <h3 className="font-bold text-2xl tracking-tight text-gray-900 dark:text-white">ResQ<span className="text-red-600">Link</span></h3>}
         </div>
 
-
-        {/* NAV */}
+        {/* Navigation Items */}
         <div className={`${isMini ? 'px-2' : 'px-4'} pb-8 flex-1 overflow-y-auto custom-scrollbar`}>
 
           <SidebarItem
@@ -88,19 +97,13 @@ export default function MainLayout() {
             isSidebarCollapsed={isMini}
             subItems={[
                 { id: "Dashboard Overview", label: "Overview", icon: LayoutDashboard },
-    { id: "Weather Alerts", label: "Weather & Alerts", icon: CloudRain }
+                { id: "Weather Alerts", label: "Weather & Alerts", icon: CloudRain }
             ]}
           />
 
-          {/* {!isMini && <div className="text-gray-400 text-xs font-bold mt-6 mb-3 uppercase px-3">Monitor</div>}
-          {isMini && <div className="border-t w-8 mx-auto my-4"></div>} */}
-
-          {/* <SidebarItem icon={CloudRain} label="Weather" activeId={activeTab} onSelect={() => navigateTo("Weather")} isSidebarCollapsed={isMini} />
-          <SidebarItem icon={AlertTriangle} label="Alerts" activeId={activeTab} onSelect={() => navigateTo("Alerts")} isSidebarCollapsed={isMini} /> */}
-          {/* <SidebarItem icon={Siren} label="SOS" activeId={activeTab} onSelect={() => navigateTo("SOS")} isSidebarCollapsed={isMini} />
-             */}
-          {!isMini && <div className="text-gray-400 text-xs font-bold mt-6 mb-3 uppercase px-3">Emergency Help</div>}
-          {isMini && <div className="border-t w-8 mx-auto my-4"></div>}
+          {/* Section: Emergency Help */}
+          {!isMini && <div className="text-gray-400 dark:text-zinc-500 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Emergency Help</div>}
+          {isMini && <div className="border-t dark:border-white/10 w-8 mx-auto my-4"></div>}
 
           <SidebarItem 
             icon={Siren}
@@ -111,14 +114,15 @@ export default function MainLayout() {
             onSelect={navigateTo}
             isSidebarCollapsed={isMini}
               subItems={[
-    { id: "SOS", label: "SOS", icon: Siren },
-    { id: "Safety Info", label: "Safety Info", icon: Shield },
-    { id: "Contacts", label: "Contacts", icon: Phone }
-  ]}
+                { id: "SOS", label: "SOS", icon: Siren },
+                { id: "Safety Info", label: "Safety Info", icon: Shield },
+                { id: "Contacts", label: "Contacts", icon: Phone }
+              ]}
           />
 
-          {!isMini && <div className="text-gray-400 text-xs font-bold mt-6 mb-3 uppercase px-3">Response</div>}
-          {isMini && <div className="border-t w-8 mx-auto my-4"></div>}
+          {/* Section: Response */}
+          {!isMini && <div className="text-gray-400 dark:text-zinc-500 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Response</div>}
+          {isMini && <div className="border-t dark:border-white/10 w-8 mx-auto my-4"></div>}
 
           <SidebarItem 
             icon={Radio}
@@ -129,15 +133,14 @@ export default function MainLayout() {
             onSelect={navigateTo}
             isSidebarCollapsed={isMini}
               subItems={[
-    { id: "Rescue Channels", label: "Channels", icon: Radio },
-    { id: "Map Navigation", label: "Map Navigation", icon: MapIcon },
-    // { id: "Resource Requests", label: "Resource Requests", icon: FileText }
-  ]}
+                { id: "Rescue Channels", label: "Channels", icon: Radio },
+                { id: "Map Navigation", label: "Map Navigation", icon: MapIcon },
+              ]}
           />
-
           
-          {!isMini && <div className="text-gray-400 text-xs font-bold mt-6 mb-3 uppercase px-3">Support</div>}
-          {isMini && <div className="border-t w-8 mx-auto my-4"></div>}
+          {/* Section: Support */}
+          {!isMini && <div className="text-gray-400 dark:text-zinc-500 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Support</div>}
+          {isMini && <div className="border-t dark:border-white/10 w-8 mx-auto my-4"></div>}
 
           <SidebarItem 
             icon={Heart}
@@ -148,21 +151,16 @@ export default function MainLayout() {
             onSelect={navigateTo}
             isSidebarCollapsed={isMini}
               subItems={[
-    { id: "Donate", label: "Donate", icon: Heart },
-    { id: "Local Support Network", label: "Local Support Network", icon: Users },
-    { id: "Resources Request", label: "Resources Request", icon: FileText }
-  ]}
+                { id: "Donate", label: "Donate", icon: Heart },
+                { id: "Local Support Network", label: "Local Support Network", icon: Users },
+                { id: "Resources Request", label: "Resources Request", icon: FileText }
+              ]}
           />
 
+          {/* Section: Settings */}
+          {!isMini && <div className="text-gray-400 dark:text-zinc-500 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Settings</div>}
+          {isMini && <div className="border-t dark:border-white/10 w-8 mx-auto my-4"></div>}
 
-          {/* <SidebarItem icon={Heart} label="Donate" activeId={activeTab} onSelect={() => navigateTo("Donate")} isSidebarCollapsed={isMini} /> */}
-
-          {!isMini && <div className="text-gray-400 text-xs font-bold mt-6 mb-3 uppercase px-3">Settings</div>}
-          {isMini && <div className="border-t w-8 mx-auto my-4"></div>}
-
-          {/* <SidebarItem icon={Shield} label="Safety Info" activeId={activeTab} onSelect={() => navigateTo("Safety Info")} isSidebarCollapsed={isMini} />
-          <SidebarItem icon={Phone} label="Contacts" activeId={activeTab} onSelect={() => navigateTo("Contacts")} isSidebarCollapsed={isMini} /> */}
-          {/* <SidebarItem icon={Settings} label="Settings" activeId={activeTab} onSelect={() => navigateTo("Settings")} isSidebarCollapsed={isMini} /> */}
             <SidebarItem
             icon={Settings}
             label="Settings"
@@ -172,25 +170,26 @@ export default function MainLayout() {
             onSelect={navigateTo}
             isSidebarCollapsed={isMini}
             subItems={[
-    { id: "Settings Profile", label: "Profile", icon: User },
-    { id: "Settings Security", label: "Security", icon: Shield },
-    { id: "Settings Notifications", label: "Notifications", icon: Bell }
-  ]}
+                { id: "Settings Profile", label: "Profile", icon: User },
+                { id: "Settings Security", label: "Security", icon: Shield },
+                { id: "Settings Notifications", label: "Notifications", icon: Bell }
+            ]}
           />
 
         </div>
 
-
-        {/* Profile */}
-        <div className={`p-4 border-t ${isMini ? "flex justify-center" : ""}`}>
+        {/* Sidebar Footer (Profile) */}
+        <div className={`p-4 border-t border-gray-100 dark:border-white/10 ${isMini ? "flex justify-center" : ""}`}>
           <div className={`flex items-center gap-3 ${isMini ? "justify-center" : ""}`}>
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" className="w-10 h-10 rounded-full" />
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 ring-2 ring-white dark:ring-zinc-800" alt="profile" />
             {!isMini && <>
               <div>
-                <p className="text-sm font-bold">Sarah Connor</p>
-                <p className="text-xs text-gray-500">Field Commander</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Sarah Connor</p>
+                <p className="text-xs text-gray-500 dark:text-zinc-500">Field Commander</p>
               </div>
-              <button className="text-gray-400 hover:text-red-600"><LogOut size={18}/></button>
+              <button className="text-gray-400 hover:text-red-600 dark:text-zinc-600 dark:hover:text-red-500 ml-auto transition-colors">
+                <LogOut size={18}/>
+              </button>
             </>}
           </div>
         </div>
@@ -198,57 +197,94 @@ export default function MainLayout() {
       </div>
 
 
-      {/* MAIN CONTENT + TOPBAR */}
+      {/* --- MAIN CONTENT AREA --- */}
       <div className={`transition-all duration-300 min-h-screen flex flex-col
         ${isSidebarCollapsed ? 'lg:ml-[80px]' : 'lg:ml-[280px]'}`}>
 
-        {/* Topbar */}
-        <div className="bg-white/80 sticky top-0 border-b shadow-sm px-6 h-[80px] flex justify-between items-center">
+        {/* Top Header */}
+        <div className={`
+          sticky top-0 h-[80px] z-40 px-6 flex justify-between items-center
+          /* Light Mode */
+          bg-white/80 border-b border-gray-100 backdrop-blur-md
+          /* Dark Mode: "Floating" header feel */
+          dark:bg-[#050505]/80 dark:border-white/5 dark:backdrop-blur-xl
+        `}>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-gray-100 rounded-lg" onClick={handleSidebarToggle}>
+            <button className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg text-gray-600 dark:text-gray-300 transition-colors" onClick={handleSidebarToggle}>
               <Menu size={20}/>
             </button>
-            <h4 className="font-bold text-lg hidden md:block">{activeTab}</h4>
+            <h4 className="font-bold text-lg hidden md:block text-gray-800 dark:text-white tracking-tight">{activeTab}</h4>
           </div>
 
           <div className="flex items-center gap-4">
+            
+            {/* Search Input */}
             <div className="hidden md:block relative">
-              <input className="w-[280px] bg-gray-100 rounded-full pl-5 pr-10 py-2.5 text-sm" placeholder="Search incidents..." />
-              <Search size={18} className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400"/>
+              <input 
+                className={`
+                  w-[280px] rounded-full pl-5 pr-10 py-2.5 text-sm transition-all outline-none
+                  /* Light */
+                  bg-gray-100 text-gray-700 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-200
+                  /* Dark */
+                  dark:bg-white/5 dark:text-gray-200 dark:placeholder:text-zinc-600 dark:focus:ring-white/10 dark:hover:bg-white/10
+                `}
+                placeholder="Search incidents..." 
+              />
+              <Search size={18} className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 dark:text-zinc-500"/>
             </div>
 
+            {/* Stylish Theme Toggle */}
+            <button 
+              onClick={toggleTheme}
+              className={`
+                p-2.5 rounded-full transition-all duration-300
+                hover:scale-105 active:scale-95
+                /* Light */
+                text-gray-500 hover:bg-gray-100 
+                /* Dark */
+                dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white
+              `}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? <Sun size={20} className="text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" /> : <Moon size={20} />}
+            </button>
+
+            {/* Notifications */}
             <div className="relative">
-              <button className="p-2.5 bg-red-50 hover:bg-red-100 rounded-full text-red-600">
+              <button className={`
+                p-2.5 rounded-full transition-colors
+                bg-red-50 text-red-600 hover:bg-red-100
+                dark:bg-red-500/10 dark:text-red-500 dark:hover:bg-red-500/20
+              `}>
                 <Bell size={20}/>
               </button>
               <span className="absolute top-0 right-0 h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white dark:border-[#050505]"></span>
               </span>
             </div>
 
-            <div className="flex items-center pl-4 border-l">
-              <div className="hidden md:block text-right">
-                <h6 className="font-bold text-sm">{user?.fullName || "Mike"}</h6>
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider">Coordinator</span>
+            {/* Profile (Header) */}
+            <div className="flex items-center pl-4 border-l border-gray-200 dark:border-white/10">
+              <div className="hidden md:block text-right mr-3">
+                <h6 className="font-bold text-sm text-gray-900 dark:text-white">{user?.fullName || "Mike"}</h6>
+                <span className="text-[10px] text-gray-500 dark:text-zinc-500 uppercase tracking-wider font-semibold">Coordinator</span>
               </div>
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" className="w-10 h-10 rounded-full bg-gray-100 border"/>
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 ring-2 ring-white dark:ring-zinc-800"/>
             </div>
           </div>
 
         </div>
 
-
         {/* Dynamic Page Content */}
         <div className="p-6 pb-20">
-          <Outlet /> {/* Your page loads here */}
+          <Outlet />
         </div>
 
       </div>
 
-
-      {/* Mobile overlay */}
+      {/* Mobile Menu Overlay */}
       {isMobileOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 lg:hidden"
              onClick={() => setIsMobileOpen(false)}></div>

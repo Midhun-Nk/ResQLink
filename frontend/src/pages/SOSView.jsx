@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { io } from "socket.io-client"; // Import Socket.io
+import { io } from "socket.io-client";
 import { 
-  Siren, 
-  MapPin, 
-  AlertTriangle, 
-  CheckCircle2, 
-  X,
-  Radio
+  Siren, MapPin, AlertTriangle, CheckCircle2, X, Radio, Loader2, ShieldCheck
 } from "lucide-react";
 
 // REPLACE WITH YOUR ACTUAL BACKEND URL
@@ -17,39 +12,29 @@ export const SOSView = () => {
   const [coords, setCoords] = useState(null);
   const [socket, setSocket] = useState(null);
 
-  // 1. Initialize Socket Connection on Component Mount
+  // 1. Initialize Socket
   useEffect(() => {
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
-
-    // Cleanup: Disconnect when component unmounts
     return () => newSocket.close();
   }, []);
 
   const handleSOSClick = () => {
-    if (status === 'idle') {
-      setStatus('confirming');
-    }
+    if (status === 'idle') setStatus('confirming');
   };
 
-  const handleCancel = () => {
-    setStatus('idle');
-  };
+  const handleCancel = () => setStatus('idle');
 
   const confirmEmergency = () => {
     setStatus('locating');
 
-    // 2. Retrieve User Data from Local Storage
-    // We try/catch this in case JSON parse fails or data is missing
     let userData = {};
     try {
-        const storedUser = localStorage.getItem("user"); // Change "user" to your specific key
-        if (storedUser) {
-            userData = JSON.parse(storedUser);
-        }
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) userData = JSON.parse(storedUser);
     } catch (error) {
         console.error("Failed to load user data", error);
-        userData = { name: "Unknown", id: "Guest" }; // Fallback
+        userData = { name: "Unknown", id: "Guest" }; 
     }
 
     if (!navigator.geolocation) {
@@ -62,7 +47,6 @@ export const SOSView = () => {
       (position) => {
         const { latitude, longitude } = position.coords;
         
-        // 3. Prepare the Complete Payload (Location + User Info)
         const emergencyPayload = {
             userId: userData._id || userData.id || 'guest',
             userName: userData.fullName || userData.userName || 'Anonymous',
@@ -79,18 +63,12 @@ export const SOSView = () => {
         
         setCoords({ lat: latitude, lng: longitude });
 
-        // 4. Emit to Backend via Socket
         if (socket) {
             console.log("🚀 [EMITTING SOS]", emergencyPayload);
             socket.emit("send_sos_alert", emergencyPayload); 
-        } else {
-            console.error("Socket not connected");
         }
 
-        // Simulate network delay for UX (or listen for a 'received' event from server)
-        setTimeout(() => {
-            setStatus('sent');
-        }, 1500);
+        setTimeout(() => setStatus('sent'), 2000); // Slight delay for dramatic effect
       },
       (error) => {
         console.error("Error getting location", error);
@@ -102,38 +80,60 @@ export const SOSView = () => {
   };
 
   return (
-    <div className="relative min-h-[600px] w-full bg-red-50 flex flex-col items-center justify-center p-6 overflow-hidden rounded-xl border border-red-100 font-sans">
+    <div className={`
+      relative min-h-[600px] w-full flex flex-col items-center justify-center p-6 overflow-hidden rounded-3xl border transition-all duration-500
+      /* Light Mode */
+      bg-red-50/50 border-red-100
+      /* Dark Mode */
+      dark:bg-[#050505] dark:border-white/5
+    `}>
       
       {/* Background Pulse Animation */}
       <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
-        <div className="w-[600px] h-[600px] border border-red-200 rounded-full animate-ping [animation-duration:3s]"></div>
-        <div className="absolute w-[400px] h-[400px] border border-red-300 rounded-full animate-ping [animation-duration:3s] [animation-delay:1s]"></div>
+        <div className="w-[600px] h-[600px] border border-red-200 dark:border-red-900/20 rounded-full animate-ping [animation-duration:3s]"></div>
+        <div className="w-[450px] h-[450px] absolute border border-red-300 dark:border-red-800/30 rounded-full animate-ping [animation-duration:3s] [animation-delay:1s]"></div>
       </div>
 
       {/* --- IDLE STATE --- */}
       {status === 'idle' && (
         <div className="z-10 flex flex-col items-center animate-in zoom-in duration-500">
+           
            {/* Status Badge */}
-           <div className="mb-10 flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-red-100 shadow-sm text-gray-500 text-xs font-bold tracking-wider">
-              <Radio size={14} className={`text-emerald-500 ${socket?.connected ? 'animate-pulse' : 'text-gray-400'}`} />
-              {socket?.connected ? 'SYSTEM: ONLINE' : 'CONNECTING...'}
+           <div className={`
+             mb-12 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold tracking-wider uppercase border shadow-sm
+             bg-white border-slate-200 text-slate-500
+             dark:bg-white/5 dark:border-white/10 dark:text-zinc-400
+           `}>
+              <div className={`w-2 h-2 rounded-full ${socket?.connected ? 'bg-emerald-500 animate-pulse shadow-emerald-500/50' : 'bg-red-500'}`}></div>
+              {socket?.connected ? 'System Online' : 'Connecting...'}
            </div>
 
-           {/* The Main Button */}
+           {/* THE SOS BUTTON */}
            <button 
              onClick={handleSOSClick}
-             className="group relative w-72 h-72 rounded-full flex flex-col items-center justify-center transition-transform hover:scale-105 active:scale-95"
+             className="group relative w-72 h-72 rounded-full flex flex-col items-center justify-center transition-all duration-500 hover:scale-105 active:scale-95"
            >
-             <div className="absolute inset-0 rounded-full bg-red-200 blur-xl opacity-50 group-hover:opacity-80 transition-opacity duration-500"></div>
-             <div className="relative w-full h-full rounded-full bg-gradient-to-br from-red-500 to-red-700 shadow-xl border-4 border-red-400 flex flex-col items-center justify-center z-10">
-                <div className="absolute inset-4 rounded-full border-2 border-white/30 border-dashed animate-[spin_12s_linear_infinite]"></div>
-                <Siren size={80} className="text-white mb-2 drop-shadow-md" />
-                <span className="text-5xl font-black text-white tracking-widest drop-shadow-sm">SOS</span>
-                <span className="text-red-100 text-xs font-bold tracking-[0.2em] mt-2 group-hover:text-white transition-colors">TAP FOR HELP</span>
+             {/* Glow Effect */}
+             <div className="absolute inset-0 rounded-full bg-red-500/20 blur-[60px] group-hover:bg-red-500/40 transition-all duration-500"></div>
+             
+             {/* Button Body */}
+             <div className={`
+               relative w-full h-full rounded-full flex flex-col items-center justify-center z-10 shadow-2xl border-4
+               /* Light: Gradient */
+               bg-gradient-to-br from-red-500 to-red-700 border-red-400
+               /* Dark: Deep Red */
+               dark:bg-[#b91c1c] dark:border-red-500/30 dark:shadow-[0_0_60px_rgba(220,38,38,0.4)]
+             `}>
+                {/* Rotating Ring */}
+                <div className="absolute inset-6 rounded-full border-2 border-white/20 border-dashed animate-[spin_20s_linear_infinite]"></div>
+                
+                <Siren size={80} className="text-white mb-2 drop-shadow-md group-hover:animate-pulse" />
+                <span className="text-6xl font-black text-white tracking-tighter drop-shadow-md">SOS</span>
+                <span className="text-red-100 text-xs font-bold tracking-[0.3em] mt-3 group-hover:text-white transition-colors">TAP FOR HELP</span>
              </div>
            </button>
 
-           <p className="mt-10 text-gray-500 max-w-xs text-center text-sm font-medium">
+           <p className="mt-12 text-slate-500 dark:text-zinc-500 max-w-xs text-center text-sm font-medium">
              Pressing this sends your precise location to Rescue Teams immediately.
            </p>
         </div>
@@ -141,27 +141,34 @@ export const SOSView = () => {
 
       {/* --- CONFIRMATION DIALOG --- */}
       {status === 'confirming' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white p-8 rounded-3xl max-w-sm w-full mx-4 shadow-2xl text-center border border-gray-100">
-            <div className="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
-              <AlertTriangle size={32} className="text-red-600" />
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 dark:bg-black/60 backdrop-blur-md animate-in fade-in duration-300 p-6">
+          <div className={`
+            max-w-sm w-full p-8 rounded-3xl shadow-2xl text-center border
+            bg-white border-slate-100
+            dark:bg-[#0a0a0a] dark:border-white/10 dark:shadow-black/50
+          `}>
+            <div className="mx-auto w-20 h-20 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-red-100 dark:ring-red-500/20">
+              <AlertTriangle size={36} className="text-red-600 dark:text-red-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Are you in danger?</h2>
-            <p className="text-gray-500 text-sm mb-8 leading-relaxed">
-              This action will alert local authorities and share your live location. Use only in emergencies.
+            
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-3">Are you in danger?</h2>
+            <p className="text-slate-500 dark:text-zinc-400 text-sm mb-8 leading-relaxed">
+              This action will alert local authorities and share your live location. <br/>
+              <span className="text-red-600 dark:text-red-400 font-bold">Use only in emergencies.</span>
             </p>
-            <div className="flex gap-4">
-               <button 
-                 onClick={handleCancel}
-                 className="flex-1 py-3.5 rounded-xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-colors"
-               >
-                 Cancel
-               </button>
+            
+            <div className="flex flex-col gap-3">
                <button 
                  onClick={confirmEmergency}
-                 className="flex-1 py-3.5 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-colors"
+                 className="w-full py-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/30 transition-all active:scale-95 text-sm uppercase tracking-wider"
                >
-                 YES, ALERT
+                 Yes, Send Alert
+               </button>
+               <button 
+                 onClick={handleCancel}
+                 className="w-full py-4 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-colors text-sm dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+               >
+                 Cancel
                </button>
             </div>
           </div>
@@ -171,40 +178,53 @@ export const SOSView = () => {
       {/* --- LOCATING STATE --- */}
       {status === 'locating' && (
         <div className="z-10 flex flex-col items-center text-center animate-in fade-in">
-           <div className="relative w-32 h-32 mb-8 flex items-center justify-center">
-              <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-t-red-500 rounded-full animate-spin"></div>
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
-                <MapPin size={32} className="text-red-500 animate-bounce" />
-              </div>
+           {/* Radar Animation */}
+           <div className="relative w-40 h-40 mb-10 flex items-center justify-center">
+             <div className="absolute inset-0 border-4 border-slate-200 dark:border-white/10 rounded-full"></div>
+             <div className="absolute inset-0 border-4 border-transparent border-t-red-500 rounded-full animate-spin"></div>
+             <div className="absolute inset-4 border-2 border-slate-100 dark:border-white/5 rounded-full border-dashed animate-spin [animation-duration:5s] reverse"></div>
+             
+             <div className="w-20 h-20 bg-white dark:bg-[#111] rounded-full flex items-center justify-center shadow-lg dark:shadow-red-900/20 z-10 relative">
+                <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping"></div>
+                <MapPin size={36} className="text-red-600 dark:text-red-500" />
+             </div>
            </div>
-           <h3 className="text-xl font-bold text-gray-900 mb-2">Acquiring Location...</h3>
-           <p className="text-gray-500 font-mono text-xs bg-white px-3 py-1 rounded-full border border-gray-200">Triangulating via GPS</p>
+           
+           <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Acquiring GPS...</h3>
+           <p className="text-slate-500 dark:text-zinc-500 font-mono text-xs bg-white dark:bg-white/5 px-4 py-1.5 rounded-full border border-slate-200 dark:border-white/10">
+             Triangulating Signal
+           </p>
         </div>
       )}
 
       {/* --- SENT / SUCCESS STATE --- */}
       {status === 'sent' && (
         <div className="z-10 flex flex-col items-center text-center animate-in zoom-in duration-500">
-           <div className="w-28 h-28 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-emerald-200">
-              <CheckCircle2 size={56} className="text-white" />
+           <div className="w-32 h-32 bg-emerald-500 rounded-full flex items-center justify-center mb-8 shadow-2xl shadow-emerald-500/40 relative">
+             <div className="absolute inset-0 rounded-full border-2 border-white/30 animate-ping [animation-duration:2s]"></div>
+             <CheckCircle2 size={64} className="text-white drop-shadow-md" />
            </div>
-           <h2 className="text-2xl font-bold text-gray-900 mb-2">Help is on the way!</h2>
-           <p className="text-gray-500 text-sm mb-6">Location broadcasted successfully.</p>
            
-           <div className="bg-white p-4 rounded-xl border border-emerald-100 shadow-sm mb-8 w-64">
-              <p className="text-gray-400 text-[10px] uppercase tracking-widest mb-1 font-bold">Your Coordinates</p>
-              <p className="text-emerald-600 font-mono font-bold text-lg flex items-center justify-center gap-2">
-                <MapPin size={16} />
+           <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Help Sent!</h2>
+           <p className="text-slate-600 dark:text-zinc-400 text-sm mb-8 font-medium">Rescue teams have received your location.</p>
+           
+           <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 shadow-sm mb-10 w-full max-w-xs relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+              <p className="text-slate-400 dark:text-zinc-500 text-[10px] uppercase tracking-widest mb-2 font-bold">Broadcasted Coordinates</p>
+              <p className="text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xl flex items-center justify-center gap-2">
+                <MapPin size={20} />
                 {coords?.lat.toFixed(4)}, {coords?.lng.toFixed(4)}
               </p>
            </div>
            
            <button 
              onClick={() => setStatus('idle')}
-             className="px-8 py-3 rounded-full bg-gray-900 text-white font-bold hover:bg-gray-800 transition-colors flex items-center gap-2 shadow-lg"
+             className="px-8 py-3.5 rounded-full font-bold transition-all shadow-lg flex items-center gap-2 hover:scale-105 active:scale-95
+             bg-slate-900 text-white hover:bg-slate-800
+             dark:bg-white dark:text-black dark:hover:bg-zinc-200
+             "
            >
-             <X size={18} /> Close & Reset
+             <ShieldCheck size={18} /> Return to Safety
            </button>
         </div>
       )}

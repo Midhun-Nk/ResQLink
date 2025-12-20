@@ -175,21 +175,20 @@ export const DashboardView = () => {
               Quick Actions
             </h4>
             <div className="space-y-3">
-              <button
-                onClick={() => navigate("/contacts")}
-                className="w-full text-left flex items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <Phone className="h-6 w-6 text-blue-500 mr-4" />
-                <div>
-                  <p className="font-semibold text-slate-800">Helplines</p>
-                  <p className="text-sm text-slate-500">
-                    Find emergency numbers.
-                  </p>
-                </div>
-              </button>
+             <button
+  onClick={() => navigate("/contacts")}
+  className="w-full text-left cursor-pointer flex items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+>
+  <Phone className="h-6 w-6 text-blue-500 mr-4" />
+  <div>
+    <p className="font-semibold text-slate-800">Helplines</p>
+    <p className="text-sm text-slate-500">Find emergency numbers.</p>
+  </div>
+</button>
+
               <button
                 onClick={() => navigate("/map")}
-                className="w-full text-left flex items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                className="w-full  cursor-pointer text-left flex items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 <MapPin className="h-6 w-6 text-green-500 mr-4" />
                 <div>
@@ -201,7 +200,7 @@ export const DashboardView = () => {
               </button>
               <button
                 onClick={() => navigate("/safety-info")}
-                className="w-full text-left flex items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                className="w-full  cursor-pointer text-left flex items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 <BookOpen className="h-6 w-6 text-indigo-500 mr-4" />
                 <div>
@@ -216,7 +215,7 @@ export const DashboardView = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 p-6 flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
+      {/* <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 p-6 flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
         <div>
           <h3 className="text-2xl font-bold text-gray-900 mb-1">Disaster Command Center</h3>
           <p className="text-gray-500">Live Situation Monitoring System</p>
@@ -234,7 +233,7 @@ export const DashboardView = () => {
         </div>
       </div>
 
-      {/* Live Map Section */}
+      
       <div className="mb-6">
          <div className="flex justify-between items-center mb-4">
             <h4 className="text-lg font-bold text-gray-900">Live Crisis Map</h4>
@@ -244,7 +243,7 @@ export const DashboardView = () => {
       </div>
      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Evacuation Progress Chart */}
+       
         <StatCard title="Evacuation Progress" actions>
           <div className="flex gap-6 mb-6">
              <div>
@@ -275,7 +274,6 @@ export const DashboardView = () => {
           </div>
         </StatCard>
 
-        {/* Incident Distribution Pie Chart */}
         <StatCard title="Incident Severity">
            <div className="h-[300px] w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
@@ -310,7 +308,7 @@ export const DashboardView = () => {
               ))}
            </div>
         </StatCard>
-      </div>
+      </div> */}
     </div>
   );
 };

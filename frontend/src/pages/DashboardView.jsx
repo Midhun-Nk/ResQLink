@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
-  AreaChart, Area, PieChart, Pie, Cell
-} from 'recharts';
-import { LiveDisasterMap } from '../components/LiveDisasterMap';
-import { dashboardData } from '../assets/data';
-import { StatCard } from '../components/StatCard';
-import { BookOpen, CloudSun, MapPin, Phone, ShieldAlert, Loader2 } from 'lucide-react';
+  ShieldAlert, Loader2, CloudSun, MapPin, Phone, BookOpen, ExternalLink, Wind
+} from 'lucide-react';
 
 export const DashboardView = () => {
   const navigate = useNavigate();
@@ -16,7 +11,6 @@ export const DashboardView = () => {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // You can change this default city or use Geolocation logic here
   const DEFAULT_CITY = "Kozhikode"; 
   const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
 
@@ -47,36 +41,77 @@ export const DashboardView = () => {
   }, [apiKey]);
 
   return (
-    <div className="animate-in fade-in duration-500">
+    // MAIN WRAPPER WITH DOTTED BACKGROUND
+    <div className={`
+      animate-in fade-in duration-500 pb-10 min-h-screen
+      /* Dotted Pattern Logic */
+      bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px] 
+      dark:bg-[radial-gradient(#ffffff1a_1px,transparent_1px)]
+    `}>
       <div className="space-y-6">
         
-        {/* Latest Alert Section */}
-        <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-800 p-4 rounded-r-lg shadow-md flex items-start">
-          <ShieldAlert className="h-6 w-6 mr-3 mt-1 flex-shrink-0" />
-          <div>
-            <h3 className="font-bold">LATEST ALERT: High Wind Advisory</h3>
-            <p className="text-sm">
-              Strong winds expected across coastal areas from 4:00 PM onwards.
-              Secure loose objects and avoid coastal travel. Updated: 5 mins ago.
-            </p>
+        {/* --- LATEST ALERT BANNER --- */}
+        <div className={`
+          relative overflow-hidden rounded-xl p-5 shadow-sm border-l-4 transition-all
+          /* Light Mode: Card pop */
+          bg-white border-amber-500 shadow-slate-200/60 ring-1 ring-slate-200
+          /* Dark Mode */
+          dark:bg-[#0a0a0a] dark:text-amber-100 dark:border-amber-500 dark:shadow-none dark:ring-white/10
+        `}>
+          <div className="flex items-start relative z-10">
+            <div className="p-2.5 bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 rounded-lg mr-4 mt-1">
+               <ShieldAlert className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">LATEST ALERT: High Wind Advisory</h3>
+              <p className="text-sm mt-1 text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
+                Strong winds expected across coastal areas from 4:00 PM onwards.
+                Secure loose objects and avoid coastal travel.
+              </p>
+              <p className="text-xs font-mono font-bold mt-3 text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                Updated: 5 mins ago
+              </p>
+            </div>
           </div>
+          {/* Decorative Background Icon */}
+          <Wind className="absolute right-[-20px] top-[-20px] h-32 w-32 text-slate-100 dark:text-amber-500/5 -rotate-12 pointer-events-none" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             
-            {/* SOS Card */}
-            <div className="bg-red-600 text-white rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between shadow-lg shadow-red-200">
-              <div>
-                <h3 className="text-3xl font-bold">Emergency SOS</h3>
-                <p className="mt-2 text-red-100 max-w-md">
-                  If you are in immediate danger, press the SOS button to alert
-                  authorities with your location.
+            {/* --- SOS CARD --- */}
+            <div className={`
+              rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between shadow-xl shadow-red-500/20 relative overflow-hidden group
+              /* Light Mode */
+              bg-gradient-to-br from-red-600 to-red-700 text-white
+              /* Dark Mode */
+              dark:from-red-700 dark:to-red-900
+            `}>
+              {/* Background texture for SOS */}
+              <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+              
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 border border-white/20">
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                  Emergency Mode
+                </div>
+                <h3 className="text-3xl font-black tracking-tight text-white drop-shadow-sm">Emergency SOS</h3>
+                <p className="mt-2 text-red-50 max-w-md text-sm leading-relaxed font-medium">
+                  If you are in immediate danger, press the SOS button to instantly alert
+                  rescue teams with your live GPS location.
                 </p>
               </div>
+
               <button
                 onClick={() => navigate("/sos")}
-                className="sos-button mt-6 md:mt-0 flex-shrink-0 w-28 h-28 bg-white rounded-full flex items-center justify-center text-red-600 font-bold text-3xl shadow-2xl hover:scale-105 transition-transform"
+                className={`
+                  sos-button mt-8 md:mt-0 flex-shrink-0 w-24 h-24 rounded-full flex items-center justify-center font-black text-2xl shadow-2xl transition-all duration-300 relative z-10
+                  bg-white text-red-600 border-4 border-red-100
+                  hover:scale-110 hover:shadow-[0_0_50px_rgba(255,255,255,0.6)]
+                  active:scale-95
+                `}
               >
                 SOS
               </button>
@@ -85,231 +120,199 @@ export const DashboardView = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* --- LIVE WEATHER CARD --- */}
-              <div className="bg-white p-6 rounded-2xl shadow-md relative overflow-hidden">
-                <div className="flex justify-between items-start mb-2">
-                   <h4 className="font-bold text-slate-800 text-lg">Current Weather</h4>
+              <div className={`
+                p-6 rounded-2xl transition-all h-full flex flex-col justify-between
+                /* Light Mode: Clean White Card */
+                bg-white border border-slate-200 shadow-lg shadow-slate-200/50
+                /* Dark Mode: Deep Black Card */
+                dark:bg-[#0a0a0a] dark:border-white/10 dark:shadow-none
+              `}>
+                <div className="flex justify-between items-start mb-4">
+                   <h4 className="font-bold text-slate-700 dark:text-white text-lg flex items-center gap-2">
+                     <div className="p-1.5 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
+                        <CloudSun size={18} className="text-blue-500" /> 
+                     </div>
+                     Weather
+                   </h4>
                    {weather && (
-                     <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-full">
+                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 dark:bg-zinc-800 dark:text-zinc-400 px-2.5 py-1 rounded-md">
                        {weather.name}
                      </span>
                    )}
                 </div>
                 
                 {loading ? (
-                  <div className="h-24 flex items-center justify-center text-slate-400 gap-2">
-                    <Loader2 className="animate-spin w-5 h-5" /> Loading live data...
+                  <div className="h-32 flex items-center justify-center text-slate-400 dark:text-zinc-600 gap-2">
+                    <Loader2 className="animate-spin w-5 h-5" /> Loading...
                   </div>
                 ) : weather ? (
                   // LIVE DATA VIEW
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center">
-                      <img 
-                        src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
-                        alt="weather icon"
-                        className="w-16 h-16 -ml-2"
-                      />
-                      <span className="text-4xl font-bold text-slate-900">
-                        {Math.round(weather.main.temp)}°
-                      </span>
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <img 
+                          src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+                          alt="weather icon"
+                          className="w-16 h-16 -ml-2 filter drop-shadow-md"
+                        />
+                        <div>
+                           <span className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
+                             {Math.round(weather.main.temp)}°
+                           </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="capitalize font-bold text-lg text-slate-700 dark:text-gray-200">{weather.weather[0].description}</p>
+                        <p className="text-sm text-slate-500 dark:text-zinc-500 font-medium">Feels {Math.round(weather.main.feels_like)}°</p>
+                      </div>
                     </div>
-                    <div className="text-right text-slate-500">
-                      <p className="capitalize font-medium text-slate-700">{weather.weather[0].description}</p>
-                      <p className="text-sm">Feels like {Math.round(weather.main.feels_like)}°</p>
-                      <p className="text-xs mt-1 text-slate-400">H: {Math.round(weather.main.temp_max)}° L: {Math.round(weather.main.temp_min)}°</p>
+                    
+                    <div className="mt-6 grid grid-cols-2 gap-3">
+                       <div className="bg-slate-50 dark:bg-white/5 p-2.5 rounded-xl text-center border border-slate-100 dark:border-white/5">
+                          <span className="text-[10px] uppercase text-slate-400 dark:text-zinc-500 font-bold block mb-1">Humidity</span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-gray-300 text-lg">{weather.main.humidity}%</span>
+                       </div>
+                       <div className="bg-slate-50 dark:bg-white/5 p-2.5 rounded-xl text-center border border-slate-100 dark:border-white/5">
+                          <span className="text-[10px] uppercase text-slate-400 dark:text-zinc-500 font-bold block mb-1">Wind</span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-gray-300 text-lg">{weather.wind.speed}</span>
+                          <span className="text-[10px] text-slate-400 ml-1">m/s</span>
+                       </div>
                     </div>
                   </div>
                 ) : (
-                  // FALLBACK STATIC VIEW (If API Fails)
-                  <div className="flex items-center justify-between mt-4 opacity-50">
-                    <div className="flex items-center">
-                      <CloudSun className="w-12 h-12 text-slate-400" />
-                      <span className="text-4xl font-bold ml-4 text-slate-900">--°</span>
-                    </div>
-                    <div className="text-right text-slate-500">
-                      <p>Data Unavailable</p>
-                      <p>Check API Connection</p>
-                    </div>
+                  // FALLBACK
+                  <div className="flex flex-col items-center justify-center h-32 opacity-50">
+                     <CloudSun className="w-10 h-10 text-slate-300 dark:text-zinc-600 mb-2" />
+                     <p className="text-sm text-slate-400">Unavailable</p>
                   </div>
                 )}
                 
                 <button
                   onClick={() => navigate("/weather-alerts")}
-                  className="mt-4 text-sm font-medium text-blue-600 hover:underline flex items-center gap-1"
+                  className="w-full mt-5 py-2.5 text-xs font-bold text-center border border-slate-200 dark:border-white/10 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
                 >
-                  View Full Forecast &rarr;
+                  Full Forecast <ExternalLink size={12} />
                 </button>
               </div>
 
-              {/* Active Alerts Summary */}
-              <div className="bg-white p-6 rounded-2xl shadow-md">
-                <h4 className="font-bold text-slate-800 text-lg">
-                  Active Alerts Summary
-                </h4>
-                <div className="mt-4 space-y-3">
-                  <div className="flex items-start">
-                    <div className="w-3 h-3 rounded-full bg-amber-500 mt-1.5 flex-shrink-0"></div>
-                    <p className="ml-3 text-sm text-slate-600">
-                      <strong>High Surf Warning</strong>
-                    </p>
+              {/* --- ACTIVE ALERTS SUMMARY --- */}
+              <div className={`
+                p-6 rounded-2xl transition-all h-full flex flex-col
+                /* Light Mode */
+                bg-white border border-slate-200 shadow-lg shadow-slate-200/50
+                /* Dark Mode */
+                dark:bg-[#0a0a0a] dark:border-white/10 dark:shadow-none
+              `}>
+                <div className="flex justify-between items-center mb-6">
+                  <h4 className="font-bold text-slate-700 dark:text-white text-lg">
+                    Alerts
+                  </h4>
+                  <span className="bg-red-50 text-red-600 border border-red-100 dark:bg-red-900/30 dark:text-red-400 dark:border-red-500/20 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                    2 Active
+                  </span>
+                </div>
+
+                <div className="space-y-4 flex-1">
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-500/10">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0 animate-pulse"></div>
+                    <div>
+                       <p className="text-sm font-bold text-slate-800 dark:text-gray-200">High Surf Warning</p>
+                       <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">Coastal areas affected.</p>
+                    </div>
                   </div>
-                  <div className="flex items-start">
-                    <div className="w-3 h-3 rounded-full bg-red-500 mt-1.5 flex-shrink-0"></div>
-                    <p className="ml-3 text-sm text-slate-600">
-                      <strong>Severe Thunderstorm Watch</strong>
-                    </p>
+
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-500/10">
+                    <div className="w-2 h-2 rounded-full bg-red-500 mt-2 flex-shrink-0 animate-pulse"></div>
+                    <div>
+                       <p className="text-sm font-bold text-slate-800 dark:text-gray-200">Severe Thunderstorm</p>
+                       <p className="text-xs text-slate-500 dark:text-zinc-500 mt-0.5">Potential flooding.</p>
+                    </div>
                   </div>
                 </div>
+
                 <button
                   onClick={() => navigate("/alerts")}
-                  className="mt-4 text-sm font-medium text-blue-600 hover:underline"
+                  className="w-full mt-5 py-2.5 text-xs font-bold text-center border border-slate-200 dark:border-white/10 rounded-lg text-slate-600 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
                 >
-                  View All Alerts &rarr;
+                  View All Alerts
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-            <h4 className="font-bold text-slate-800 text-lg mb-4">
-              Quick Actions
+          {/* --- QUICK ACTIONS --- */}
+          <div className={`
+            p-6 rounded-2xl transition-all h-full
+            /* Light Mode */
+            bg-white border border-slate-200 shadow-lg shadow-slate-200/50
+            /* Dark Mode */
+            dark:bg-[#0a0a0a] dark:border-white/10 dark:shadow-none
+          `}>
+            <h4 className="font-bold text-slate-700 dark:text-white text-lg mb-6 flex items-center gap-2">
+              ⚡ Quick Actions
             </h4>
+            
             <div className="space-y-3">
               <button
                 onClick={() => navigate("/contacts")}
-                className="w-full text-left flex items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                className={`
+                  w-full text-left flex items-center p-4 rounded-xl border transition-all group
+                  /* Light Mode */
+                  bg-slate-50 border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-md
+                  /* Dark Mode */
+                  dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10 dark:hover:border-white/20
+                `}
               >
-                <Phone className="h-6 w-6 text-blue-500 mr-4" />
+                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                  <Phone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
                 <div>
-                  <p className="font-semibold text-slate-800">Helplines</p>
-                  <p className="text-sm text-slate-500">
-                    Find emergency numbers.
-                  </p>
+                  <p className="font-bold text-slate-800 dark:text-gray-200">Helplines</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-500">Emergency numbers</p>
                 </div>
               </button>
+
               <button
                 onClick={() => navigate("/map")}
-                className="w-full text-left flex items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                className={`
+                  w-full text-left flex items-center p-4 rounded-xl border transition-all group
+                  /* Light Mode */
+                  bg-slate-50 border-slate-100 hover:bg-white hover:border-green-200 hover:shadow-md
+                  /* Dark Mode */
+                  dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10 dark:hover:border-white/20
+                `}
               >
-                <MapPin className="h-6 w-6 text-green-500 mr-4" />
+                <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                  <MapPin className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
                 <div>
-                  <p className="font-semibold text-slate-800">Nearby Shelters</p>
-                  <p className="text-sm text-slate-500">
-                    View safe locations on map.
-                  </p>
+                  <p className="font-bold text-slate-800 dark:text-gray-200">Nearby Shelters</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-500">Safe locations map</p>
                 </div>
               </button>
+
               <button
                 onClick={() => navigate("/safety-info")}
-                className="w-full text-left flex items-center p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                className={`
+                  w-full text-left flex items-center p-4 rounded-xl border transition-all group
+                  /* Light Mode */
+                  bg-slate-50 border-slate-100 hover:bg-white hover:border-indigo-200 hover:shadow-md
+                  /* Dark Mode */
+                  dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10 dark:hover:border-white/20
+                `}
               >
-                <BookOpen className="h-6 w-6 text-indigo-500 mr-4" />
+                <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                  <BookOpen className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
                 <div>
-                  <p className="font-semibold text-slate-800">Safety Guides</p>
-                  <p className="text-sm text-slate-500">
-                    Read preparedness checklists.
-                  </p>
+                  <p className="font-bold text-slate-800 dark:text-gray-200">Safety Guides</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-500">Preparedness tips</p>
                 </div>
               </button>
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 p-6 flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
-        <div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">Disaster Command Center</h3>
-          <p className="text-gray-500">Live Situation Monitoring System</p>
-        </div>
-        <div className="flex gap-6 items-center">
-           <div className="text-right">
-             <h4 className="text-xl font-bold text-red-600">3</h4>
-             <span className="text-gray-400 text-xs uppercase tracking-wider">Critical Alerts</span>
-           </div>
-           <div className="w-px h-10 bg-gray-200"></div>
-           <div className="text-right">
-             <h4 className="text-xl font-bold text-green-600">12</h4>
-             <span className="text-gray-400 text-xs uppercase tracking-wider">Teams Deployed</span>
-           </div>
-        </div>
-      </div>
-
-      {/* Live Map Section */}
-      <div className="mb-6">
-         <div className="flex justify-between items-center mb-4">
-            <h4 className="text-lg font-bold text-gray-900">Live Crisis Map</h4>
-            <button className="text-sm text-blue-600 font-medium hover:underline">View Fullscreen</button>
-         </div>
-         <LiveDisasterMap />
-      </div>
-     
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Evacuation Progress Chart */}
-        <StatCard title="Evacuation Progress" actions>
-          <div className="flex gap-6 mb-6">
-             <div>
-               <p className="text-gray-400 text-xs mb-1">Evacuated</p>
-               <h4 className="text-xl font-bold text-green-600">4,800</h4>
-             </div>
-             <div>
-               <p className="text-gray-400 text-xs mb-1">Pending</p>
-               <h4 className="text-xl font-bold text-orange-500">200</h4>
-             </div>
-          </div>
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dashboardData.evacuation}>
-                <defs>
-                  <linearGradient id="colorSafe" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
-                <YAxis hide />
-                <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                <Area type="monotone" dataKey="safe" stroke="#22c55e" strokeWidth={3} fillOpacity={1} fill="url(#colorSafe)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </StatCard>
-
-        {/* Incident Distribution Pie Chart */}
-        <StatCard title="Incident Severity">
-           <div className="h-[300px] w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                 <PieChart>
-                    <Pie
-                       data={dashboardData.severityDistribution}
-                       innerRadius={60}
-                       outerRadius={100}
-                       paddingAngle={5}
-                       dataKey="value"
-                    >
-                       {dashboardData.severityDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                       ))}
-                    </Pie>
-                    <RechartsTooltip />
-                 </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute">
-                 <div className="text-center">
-                    <span className="text-3xl font-bold text-gray-900">100%</span>
-                    <p className="text-xs text-gray-500 uppercase">Total</p>
-                 </div>
-              </div>
-           </div>
-           <div className="flex justify-center gap-4 mt-[-20px]">
-              {dashboardData.severityDistribution.map((item) => (
-                 <div key={item.name} className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{backgroundColor: item.color}}></span>
-                    <span className="text-xs text-gray-600">{item.name}</span>
-                 </div>
-              ))}
-           </div>
-        </StatCard>
       </div>
     </div>
   );
