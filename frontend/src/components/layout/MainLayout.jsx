@@ -55,19 +55,45 @@ export default function MainLayout() {
   const isMini = isSidebarCollapsed && !isMobileOpen;
 
   return (
-    // MAIN CONTAINER - "Midnight Onyx" Theme
-    // Light Mode: Gray-50
-    // Dark Mode: #050505 (Deep pure black)
+    // MAIN CONTAINER
     <div className="min-h-screen bg-gray-50 dark:bg-[#050505] overflow-hidden font-sans transition-colors duration-300 text-gray-900 dark:text-gray-100 selection:bg-red-500/30">
+      
+      {/* --- CUSTOM RED SCROLLBAR STYLES --- */}
+      <style>{`
+        /* Width */
+        ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        /* Track */
+        ::-webkit-scrollbar-track {
+          background: ${isDark ? '#0a0a0a' : '#f1f5f9'}; 
+        }
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+          background: #b91c1c; /* Red-700 */
+          border-radius: 10px;
+        }
+        /* Handle on hover (Glow Effect) */
+        ::-webkit-scrollbar-thumb:hover {
+          background: #ef4444; /* Red-500 */
+          box-shadow: 0 0 10px rgba(239, 68, 68, 0.7); 
+        }
+        /* Firefox support */
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: #b91c1c ${isDark ? '#0a0a0a' : '#f1f5f9'};
+        }
+      `}</style>
 
       {/* --- SIDEBAR --- */}
       <div 
-        className={`fixed top-0 left-0 h-screen z-50 transition-all duration-300 flex flex-col
-          /* Light Mode: White & Gray Border */
-          bg-white border-r border-gray-100
+        className={`fixed top-0 left-0 h-screen z-50 transition-all duration-300 flex flex-col border-r border-solid
+          /* Light Mode */
+          bg-white border-gray-100
           
-          /* Dark Mode: "Smoked Glass" Style */
-          dark:bg-[#0a0a0a]/90 dark:backdrop-blur-xl dark:border-white/10
+          /* Dark Mode: Solid background (No Blur) */
+          dark:bg-[#0a0a0a] dark:border-zinc-900
 
           ${isMobileOpen ? 'translate-x-0 w-[280px]' : (isSidebarCollapsed ? 'w-[80px]' : 'w-[280px]')}
           ${!isMobileOpen && 'hidden lg:flex'}
@@ -85,7 +111,7 @@ export default function MainLayout() {
         </div>
 
         {/* Navigation Items */}
-        <div className={`${isMini ? 'px-2' : 'px-4'} pb-8 flex-1 overflow-y-auto custom-scrollbar`}>
+        <div className={`${isMini ? 'px-2' : 'px-4'} pb-8 flex-1 overflow-y-auto`}>
 
           <SidebarItem
             icon={LayoutDashboard}
@@ -102,8 +128,8 @@ export default function MainLayout() {
           />
 
           {/* Section: Emergency Help */}
-          {!isMini && <div className="text-gray-400 dark:text-zinc-500 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Emergency Help</div>}
-          {isMini && <div className="border-t dark:border-white/10 w-8 mx-auto my-4"></div>}
+          {!isMini && <div className="text-gray-400 dark:text-zinc-600 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Emergency Help</div>}
+          {isMini && <div className="border-t border-gray-100 dark:border-zinc-900 w-8 mx-auto my-4"></div>}
 
           <SidebarItem 
             icon={Siren}
@@ -121,8 +147,8 @@ export default function MainLayout() {
           />
 
           {/* Section: Response */}
-          {!isMini && <div className="text-gray-400 dark:text-zinc-500 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Response</div>}
-          {isMini && <div className="border-t dark:border-white/10 w-8 mx-auto my-4"></div>}
+          {!isMini && <div className="text-gray-400 dark:text-zinc-600 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Response</div>}
+          {isMini && <div className="border-t border-gray-100 dark:border-zinc-900 w-8 mx-auto my-4"></div>}
 
           <SidebarItem 
             icon={Radio}
@@ -139,8 +165,8 @@ export default function MainLayout() {
           />
           
           {/* Section: Support */}
-          {!isMini && <div className="text-gray-400 dark:text-zinc-500 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Support</div>}
-          {isMini && <div className="border-t dark:border-white/10 w-8 mx-auto my-4"></div>}
+          {!isMini && <div className="text-gray-400 dark:text-zinc-600 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Support</div>}
+          {isMini && <div className="border-t border-gray-100 dark:border-zinc-900 w-8 mx-auto my-4"></div>}
 
           <SidebarItem 
             icon={Heart}
@@ -158,8 +184,8 @@ export default function MainLayout() {
           />
 
           {/* Section: Settings */}
-          {!isMini && <div className="text-gray-400 dark:text-zinc-500 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Settings</div>}
-          {isMini && <div className="border-t dark:border-white/10 w-8 mx-auto my-4"></div>}
+          {!isMini && <div className="text-gray-400 dark:text-zinc-600 text-[11px] font-bold mt-6 mb-3 uppercase px-3 tracking-widest">Settings</div>}
+          {isMini && <div className="border-t border-gray-100 dark:border-zinc-900 w-8 mx-auto my-4"></div>}
 
             <SidebarItem
             icon={Settings}
@@ -179,7 +205,7 @@ export default function MainLayout() {
         </div>
 
         {/* Sidebar Footer (Profile) */}
-        <div className={`p-4 border-t border-gray-100 dark:border-white/10 ${isMini ? "flex justify-center" : ""}`}>
+        <div className={`p-4 border-t border-solid border-gray-100 dark:border-zinc-900 ${isMini ? "flex justify-center" : ""}`}>
           <div className={`flex items-center gap-3 ${isMini ? "justify-center" : ""}`}>
             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 ring-2 ring-white dark:ring-zinc-800" alt="profile" />
             {!isMini && <>
@@ -203,11 +229,11 @@ export default function MainLayout() {
 
         {/* Top Header */}
         <div className={`
-          sticky top-0 h-[80px] z-40 px-6 flex justify-between items-center
+          sticky top-0 h-[80px] z-40 px-6 flex justify-between items-center border-b border-solid
           /* Light Mode */
-          bg-white/80 border-b border-gray-100 backdrop-blur-md
-          /* Dark Mode: "Floating" header feel */
-          dark:bg-[#050505]/80 dark:border-white/5 dark:backdrop-blur-xl
+          bg-white border-gray-100
+          /* Dark Mode: Solid Deep Black (No Transparency/Blur) */
+          dark:bg-[#050505] dark:border-zinc-900
         `}>
 
           <div className="flex items-center gap-4">
@@ -223,15 +249,15 @@ export default function MainLayout() {
             <div className="hidden md:block relative">
               <input 
                 className={`
-                  w-[280px] rounded-full pl-5 pr-10 py-2.5 text-sm transition-all outline-none
+                  w-[280px] rounded-full pl-5 pr-10 py-2.5 text-sm transition-all outline-none border border-transparent focus:border-gray-200 dark:focus:border-zinc-800
                   /* Light */
-                  bg-gray-100 text-gray-700 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-200
+                  bg-gray-100 text-gray-700 placeholder:text-gray-400 
                   /* Dark */
-                  dark:bg-white/5 dark:text-gray-200 dark:placeholder:text-zinc-600 dark:focus:ring-white/10 dark:hover:bg-white/10
+                  dark:bg-[#111] dark:text-gray-200 dark:placeholder:text-zinc-600
                 `}
                 placeholder="Search incidents..." 
               />
-              <Search size={18} className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 dark:text-zinc-500"/>
+              <Search size={18} className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 dark:text-zinc-600"/>
             </div>
 
             {/* Stylish Theme Toggle */}
@@ -243,7 +269,7 @@ export default function MainLayout() {
                 /* Light */
                 text-gray-500 hover:bg-gray-100 
                 /* Dark */
-                dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white
+                dark:text-zinc-400 dark:hover:bg-[#111] dark:hover:text-white
               `}
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
@@ -255,7 +281,7 @@ export default function MainLayout() {
               <button className={`
                 p-2.5 rounded-full transition-colors
                 bg-red-50 text-red-600 hover:bg-red-100
-                dark:bg-red-500/10 dark:text-red-500 dark:hover:bg-red-500/20
+                dark:bg-red-900/20 dark:text-red-500 dark:hover:bg-red-900/40
               `}>
                 <Bell size={20}/>
               </button>
@@ -266,7 +292,7 @@ export default function MainLayout() {
             </div>
 
             {/* Profile (Header) */}
-            <div className="flex items-center pl-4 border-l border-gray-200 dark:border-white/10">
+            <div className="flex items-center pl-4 border-l border-solid border-gray-200 dark:border-zinc-900">
               <div className="hidden md:block text-right mr-3">
                 <h6 className="font-bold text-sm text-gray-900 dark:text-white">{user?.fullName || "Mike"}</h6>
                 <span className="text-[10px] text-gray-500 dark:text-zinc-500 uppercase tracking-wider font-semibold">Coordinator</span>
@@ -278,7 +304,7 @@ export default function MainLayout() {
         </div>
 
         {/* Dynamic Page Content */}
-        <div className="p-6 pb-20">
+        <div className="p-6 pb-20 overflow-y-auto h-[calc(100vh-80px)]">
           <Outlet />
         </div>
 
@@ -286,7 +312,7 @@ export default function MainLayout() {
 
       {/* Mobile Menu Overlay */}
       {isMobileOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 lg:hidden"
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
              onClick={() => setIsMobileOpen(false)}></div>
       )}
 

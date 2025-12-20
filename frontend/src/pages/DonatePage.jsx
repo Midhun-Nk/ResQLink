@@ -6,7 +6,7 @@ import {
   Heart, ShieldCheck, Activity, Users, CreditCard, ArrowRight, TrendingUp 
 } from 'lucide-react';
 
-// --- Mock Data for the Chart ---
+// --- Mock Data ---
 const donationData = [
   { name: 'Day 1', amount: 4000 },
   { name: 'Day 2', amount: 12000 },
@@ -21,8 +21,6 @@ const DonatePage = () => {
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- Configuration ---
-  // In a real app, fetch these from your backend
   const stats = {
     totalRaised: 164500,
     goal: 500000,
@@ -32,80 +30,46 @@ const DonatePage = () => {
 
   const progressPercentage = (stats.totalRaised / stats.goal) * 100;
 
-  // --- Razorpay Handler ---
   const handleDonation = async () => {
     if (!amount || amount <= 0) {
       alert("Please enter a valid amount");
       return;
     }
-
     setIsLoading(true);
-
-    // 1. Create Order: In production, fetch this from YOUR backend
-    // const data = await fetch('/api/payment/order', { method: 'POST' ... })
-    // const order = await data.json();
-    
-    const options = {
-      key: "YOUR_RAZORPAY_KEY_ID", // Replace with Test Key ID
-      amount: amount * 100, // Amount is in paise
-      currency: "INR",
-      name: "Disaster Relief Fund",
-      description: "Contribution for Flood Relief",
-      image: "https://yourdomain.com/logo.png",
-      // order_id: order.id, // Generate this from backend
-      handler: function (response) {
-        alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
-        // Call backend to verify signature here
+    // Simulate API call
+    setTimeout(() => {
+        alert("Redirecting to Payment Gateway...");
         setIsLoading(false);
-        setAmount('');
-      },
-      prefill: {
-        name: "Midhun NK", // Pre-fill user details if logged in
-        email: "midhun@example.com",
-        contact: "9999999999"
-      },
-      theme: {
-        color: "#059669" // Emerald-600 to match UI
-      }
-    };
-
-    const rzp1 = new window.Razorpay(options);
-    
-    rzp1.on('payment.failed', function (response){
-        alert(response.error.description);
-        setIsLoading(false);
-    });
-
-    rzp1.open();
+    }, 1500);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-6 md:p-12">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#050505] text-slate-800 dark:text-gray-200 font-sans p-6 md:p-12 transition-colors duration-300">
       
       {/* --- Header Section --- */}
       <div className="max-w-6xl mx-auto mb-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-emerald-600 mb-2">
+            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2">
               <ShieldCheck size={20} />
-              <span className="font-semibold text-sm uppercase tracking-wider">Official Relief Fund</span>
+              <span className="font-bold text-sm uppercase tracking-wider">Official Relief Fund</span>
             </div>
-            <h1 className="text-4xl font-bold text-slate-900">Disaster Recovery Initiative</h1>
-            <p className="text-slate-500 mt-2 max-w-xl">
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Disaster Recovery Initiative</h1>
+            <p className="text-slate-500 dark:text-zinc-400 mt-2 max-w-xl text-lg">
               Urgent funds required for medical supplies, food packets, and temporary shelter. 
               Every rupee is tracked transparently.
             </p>
           </div>
           <div className="flex items-center gap-3">
-             <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3">
-                <div className="bg-emerald-100 p-2 rounded-full text-emerald-600">
-                    <Activity size={20} />
+              <div className="bg-white dark:bg-[#0a0a0a] p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-white/10 flex items-center gap-4">
+                <div className="bg-emerald-100 dark:bg-emerald-500/20 p-2.5 rounded-full text-emerald-600 dark:text-emerald-400">
+                    <Activity size={24} />
                 </div>
                 <div>
-                    <p className="text-xs text-slate-500 font-medium">Status</p>
-                    <p className="text-sm font-bold text-emerald-600">Active / High Priority</p>
+                    <p className="text-xs text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">Status</p>
+                    <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">Active / High Priority</p>
                 </div>
-             </div>
+              </div>
           </div>
         </div>
       </div>
@@ -117,34 +81,34 @@ const DonatePage = () => {
           
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-              <p className="text-slate-500 text-sm font-medium mb-1">Total Raised</p>
-              <h3 className="text-2xl font-bold text-slate-900">₹{stats.totalRaised.toLocaleString()}</h3>
-              <div className="flex items-center gap-1 text-emerald-500 text-xs mt-2 font-medium">
+            <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-white/10">
+              <p className="text-slate-500 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider mb-1">Total Raised</p>
+              <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">₹{stats.totalRaised.toLocaleString()}</h3>
+              <div className="flex items-center gap-1 text-emerald-500 text-xs mt-2 font-bold">
                 <TrendingUp size={14} />
-                <span>+12% from yesterday</span>
+                <span>+12% vs yesterday</span>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-              <p className="text-slate-500 text-sm font-medium mb-1">Donors Count</p>
-              <h3 className="text-2xl font-bold text-slate-900">{stats.donors}</h3>
-               <div className="flex items-center gap-1 text-blue-500 text-xs mt-2 font-medium">
+            <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-white/10">
+              <p className="text-slate-500 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider mb-1">Donors Count</p>
+              <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{stats.donors}</h3>
+               <div className="flex items-center gap-1 text-blue-500 text-xs mt-2 font-bold">
                 <Users size={14} />
                 <span>Active Community</span>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-              <p className="text-slate-500 text-sm font-medium mb-1">Funding Goal</p>
-              <h3 className="text-2xl font-bold text-slate-900">₹{stats.goal.toLocaleString()}</h3>
-              <p className="text-slate-400 text-xs mt-2">{stats.daysLeft} days remaining</p>
+            <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-white/10">
+              <p className="text-slate-500 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider mb-1">Funding Goal</p>
+              <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">₹{stats.goal.toLocaleString()}</h3>
+              <p className="text-slate-400 dark:text-zinc-600 text-xs mt-2 font-medium">{stats.daysLeft} days remaining</p>
             </div>
           </div>
 
           {/* Chart Section */}
-          <div className="bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100">
+          <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-2xl shadow-lg shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-white/10">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-lg text-slate-800">Fund Flow Analytics</h3>
-              <select className="bg-slate-50 border-none text-sm text-slate-600 rounded-lg p-2 cursor-pointer focus:ring-2 focus:ring-emerald-500">
+              <h3 className="font-bold text-lg text-slate-800 dark:text-white">Fund Flow Analytics</h3>
+              <select className="bg-slate-50 dark:bg-white/5 border-none text-sm text-slate-600 dark:text-zinc-400 rounded-lg p-2 cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
                 <option>Last 7 Days</option>
                 <option>Last 30 Days</option>
               </select>
@@ -154,16 +118,16 @@ const DonatePage = () => {
                 <AreaChart data={donationData}>
                   <defs>
                     <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} tickFormatter={(value) => `₹${value/1000}k`} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" strokeOpacity={0.1} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#71717a', fontSize: 12, fontWeight: 600}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#71717a', fontSize: 12}} tickFormatter={(value) => `₹${value/1000}k`} />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ color: '#059669', fontWeight: 'bold' }}
+                    contentStyle={{ backgroundColor: '#18181b', borderRadius: '12px', border: '1px solid #27272a', color: '#fff' }}
+                    itemStyle={{ color: '#34d399', fontWeight: 'bold' }}
                   />
                   <Area type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorAmt)" />
                 </AreaChart>
@@ -174,24 +138,24 @@ const DonatePage = () => {
 
         {/* --- Right Column: Donation Action (1/3 width) --- */}
         <div className="lg:col-span-1">
-          <div className="bg-white p-6 rounded-3xl shadow-xl border border-emerald-100 sticky top-10">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Heart fill="currentColor" size={32} />
+          <div className="bg-white dark:bg-[#0a0a0a] p-8 rounded-3xl shadow-xl border border-emerald-100 dark:border-emerald-500/20 sticky top-10">
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-emerald-50/50 dark:ring-emerald-500/5">
+                <Heart fill="currentColor" size={36} />
               </div>
-              <h2 className="text-xl font-bold text-slate-900">Make an Impact</h2>
-              <p className="text-sm text-slate-500 mt-1">Your contribution directly supports relief operations.</p>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Make an Impact</h2>
+              <p className="text-sm text-slate-500 dark:text-zinc-400 mt-2 font-medium">Your contribution directly supports relief operations.</p>
             </div>
 
             {/* Progress Bar */}
             <div className="mb-8">
-              <div className="flex justify-between text-sm mb-2 font-medium">
-                <span className="text-emerald-700">{progressPercentage.toFixed(1)}% Funded</span>
-                <span className="text-slate-400">Target: ₹{(stats.goal/1000)}k</span>
+              <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2">
+                <span className="text-emerald-700 dark:text-emerald-400">{progressPercentage.toFixed(1)}% Funded</span>
+                <span className="text-slate-400 dark:text-zinc-600">Goal: ₹{(stats.goal/1000)}k</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+              <div className="w-full bg-slate-100 dark:bg-white/10 rounded-full h-3 overflow-hidden">
                 <div 
-                  className="bg-emerald-500 h-3 rounded-full transition-all duration-1000 ease-out" 
+                  className="bg-emerald-500 h-3 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(16,185,129,0.5)]" 
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
@@ -199,15 +163,15 @@ const DonatePage = () => {
 
             {/* Amount Input */}
             <div className="space-y-4">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Enter Amount</label>
+              <label className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest">Donation Amount</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 font-bold text-lg">₹</span>
                 <input 
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="2000"
-                  className="w-full pl-8 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-xl text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                  className="w-full pl-10 pr-4 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-xl font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all placeholder:text-slate-300 dark:placeholder:text-zinc-700"
                 />
               </div>
 
@@ -217,7 +181,7 @@ const DonatePage = () => {
                   <button 
                     key={val}
                     onClick={() => setAmount(val)}
-                    className="py-2 text-sm font-medium rounded-lg border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 transition-colors"
+                    className="py-2.5 text-sm font-bold rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-zinc-400 hover:border-emerald-500 hover:text-emerald-600 dark:hover:border-emerald-500 dark:hover:text-emerald-400 dark:hover:bg-emerald-500/10 transition-all"
                   >
                     ₹{val}
                   </button>
@@ -227,22 +191,22 @@ const DonatePage = () => {
               <button 
                 onClick={handleDonation}
                 disabled={isLoading}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 transition-all"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-4"
               >
                 {isLoading ? 'Processing...' : (
                   <>
                     <CreditCard size={20} />
-                    Donate Now
+                    DONATE NOW
                   </>
                 )}
               </button>
             </div>
 
             {/* Security Note */}
-            <div className="mt-6 flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
-               <ShieldCheck size={16} className="text-slate-400 shrink-0 mt-1" />
-               <p className="text-xs text-slate-500">
-                 Payments are secured by Razorpay. All donations are eligible for tax exemption receipts.
+            <div className="mt-6 flex items-start gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+               <ShieldCheck size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+               <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium leading-relaxed">
+                 Payments secured by <strong>Razorpay</strong>. 100% Secure & Encrypted. Tax exemption available.
                </p>
             </div>
           </div>
@@ -251,24 +215,24 @@ const DonatePage = () => {
       </div>
 
       {/* --- Footer / Recent Activity --- */}
-      <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-slate-200">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-           <h4 className="font-semibold text-slate-700">Recent Contributions</h4>
-           <button className="text-emerald-600 text-sm font-medium flex items-center gap-1 hover:gap-2 transition-all">
+      <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-slate-200 dark:border-white/10">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+           <h4 className="font-bold text-slate-700 dark:text-zinc-300">Recent Contributions</h4>
+           <button className="text-emerald-600 dark:text-emerald-400 text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all">
              View all transactions <ArrowRight size={16}/>
            </button>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
            {/* Mock Recent Donors */}
            {[1, 2, 3, 4].map((i) => (
-             <div key={i} className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700 font-bold text-xs">
+             <div key={i} className="flex items-center gap-3 p-4 bg-white dark:bg-[#0a0a0a] rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-colors">
+                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-xs">
                   {['JD', 'AS', 'MK', 'RL'][i-1]}
                 </div>
                 <div>
-                   <p className="text-sm font-bold text-slate-800">Anonymous</p>
-                   <p className="text-xs text-slate-500">Donated ₹{500 * i}</p>
+                   <p className="text-sm font-bold text-slate-800 dark:text-white">Anonymous</p>
+                   <p className="text-xs text-slate-500 dark:text-zinc-500 font-mono">Donated ₹{500 * i}</p>
                 </div>
              </div>
            ))}

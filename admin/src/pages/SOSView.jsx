@@ -9,13 +9,13 @@ import 'leaflet-routing-machine';
 // Icons
 import { 
   MapPin, Phone, AlertOctagon, Activity, ShieldAlert, 
-  Navigation, User, ArrowLeft, Siren, ExternalLink, Clock, Radio, Globe, Target
+  Navigation, User, ArrowLeft, Siren, ExternalLink, Clock, Radio, Globe, Target, Map
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
 const socket = io("http://localhost:5000");
 
-// Fix Leaflet's default icon issue in React
+// Fix Leaflet's default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -42,8 +42,7 @@ const rescuerIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-// --- HELPER: AUTO ZOOM TO FIT ALL MARKERS ---
-// This component automatically calculates the zoom level to show all victims
+// --- HELPER: AUTO ZOOM ---
 const FitBoundsToMarkers = ({ markers }) => {
   const map = useMap();
   useEffect(() => {
@@ -89,14 +88,12 @@ const RoutingControl = ({ start, end }) => {
 export const SOSView = () => {
   const [alerts, setAlerts] = useState([]);
   const [isConnected, setIsConnected] = useState(socket.connected);
-  // viewMode options: 'dashboard' | 'navigation' (single) | 'global-map' (all)
   const [viewMode, setViewMode] = useState('dashboard'); 
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [myLocation, setMyLocation] = useState(null);
   
   const audioContextRef = useRef(null);
 
-  // Sound Logic
   const playAlertSound = () => {
     if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -115,7 +112,6 @@ export const SOSView = () => {
     osc.stop(ctx.currentTime + 0.5);
   };
 
-  // Get User's Current Location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -147,9 +143,7 @@ export const SOSView = () => {
 
   const handleLocate = (alert) => {
     if (!myLocation) {
-      // alert("Getting your GPS location... please wait or allow permission.");
-      // For testing without GPS, you can uncomment below:
-       setMyLocation({ lat: 11.25, lng: 75.78 }); 
+       setMyLocation({ lat: 11.25, lng: 75.78 }); // Default fallback for dev
       return;
     }
     setSelectedAlert(alert);
@@ -157,7 +151,7 @@ export const SOSView = () => {
   };
 
   const openGoogleMaps = (lat, lng) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+    const url = `http://maps.google.com/maps?q=${lat},${lng}`;
     window.open(url, '_blank');
   };
 
@@ -170,10 +164,10 @@ export const SOSView = () => {
 
   // --- RENDER ---
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#050505] font-sans text-slate-900 dark:text-gray-200 flex flex-col transition-colors duration-300">
       
       {/* HEADER */}
-      <header className="bg-slate-900 text-white sticky top-0 z-[1000] px-6 py-4 flex justify-between items-center shadow-2xl border-b border-slate-700">
+      <header className="bg-slate-900 dark:bg-[#0a0a0a] text-white sticky top-0 z-[1000] px-6 py-4 flex justify-between items-center shadow-lg border-b border-slate-700 dark:border-white/10">
         <div className="flex items-center gap-4">
             <div className="relative">
                 <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center shadow-lg shadow-red-900/50">
@@ -195,14 +189,13 @@ export const SOSView = () => {
         </div>
 
         <div className="flex items-center gap-4">
-            {/* NEW: LOCATE ALL BUTTON (Only visible on dashboard with alerts) */}
             {viewMode === 'dashboard' && alerts.length > 0 && (
                 <button 
                     onClick={() => setViewMode('global-map')}
                     className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-lg shadow-indigo-900/20"
                 >
                     <Globe size={16} />
-                    LOCATE ALL VICTIMS
+                    LOCATE ALL
                 </button>
             )}
 
@@ -219,72 +212,72 @@ export const SOSView = () => {
         <main className="max-w-7xl mx-auto p-6 w-full">
             <div className="flex justify-between items-end mb-8">
                <div>
-                  <h2 className="text-3xl font-bold text-slate-800">Live Incident Feed</h2>
-                  <p className="text-slate-500 mt-1 flex items-center gap-2">
+                  <h2 className="text-3xl font-bold text-slate-800 dark:text-white">Live Incident Feed</h2>
+                  <p className="text-slate-500 dark:text-zinc-400 mt-1 flex items-center gap-2">
                     <Radio size={16} className="animate-pulse text-red-500" />
                     Scanning frequencies for distress beacons...
                   </p>
                </div>
-               <div className="text-right bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200">
-                  <span className="text-4xl font-black text-slate-900 block">{alerts.length}</span>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Alerts</span>
+               <div className="text-right bg-white dark:bg-[#0a0a0a] px-6 py-3 rounded-2xl shadow-sm border border-slate-200 dark:border-white/10">
+                  <span className="text-4xl font-black text-slate-900 dark:text-white block">{alerts.length}</span>
+                  <span className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Active Alerts</span>
                </div>
             </div>
 
             {alerts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[50vh] text-slate-400 bg-white rounded-3xl border border-slate-200 border-dashed">
-                    <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                <div className="flex flex-col items-center justify-center h-[50vh] text-slate-400 dark:text-zinc-600 bg-white dark:bg-[#0a0a0a] rounded-3xl border border-slate-200 dark:border-white/10 border-dashed">
+                    <div className="w-24 h-24 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
                         <ShieldAlert size={48} className="opacity-20" />
                     </div>
-                    <h2 className="text-xl font-bold text-slate-600">All Sectors Clear</h2>
+                    <h2 className="text-xl font-bold text-slate-600 dark:text-zinc-400">All Sectors Clear</h2>
                     <p className="text-sm mt-2">No distress signals detected in current range.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {alerts.map((alert, index) => (
-                        <div key={index} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group relative">
+                        <div key={index} className="bg-white dark:bg-[#0a0a0a] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group relative">
                             {/* Urgent Strip */}
                             <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
                             
                             <div className="p-6">
                                 <div className="flex justify-between items-start mb-4">
-                                    <div className="flex items-center gap-2 bg-red-50 text-red-700 px-3 py-1 rounded-lg border border-red-100">
+                                    <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-3 py-1 rounded-lg border border-red-100 dark:border-red-500/20">
                                         <AlertOctagon size={16} className="animate-pulse" />
                                         <span className="text-xs font-black tracking-wider uppercase">SOS CRITICAL</span>
                                     </div>
-                                    <span className="text-xs font-mono font-bold text-slate-400 flex items-center gap-1">
+                                    <span className="text-xs font-mono font-bold text-slate-400 dark:text-zinc-500 flex items-center gap-1">
                                         <Clock size={12} />
                                         {formatTime(alert.timestamp)}
                                     </span>
                                 </div>
 
                                 <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200">
-                                        <User size={24} className="text-slate-600" />
+                                    <div className="w-12 h-12 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center border border-slate-200 dark:border-white/5">
+                                        <User size={24} className="text-slate-600 dark:text-zinc-400" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold text-slate-800 leading-tight">{alert.userName || "Unknown Victim"}</h3>
-                                        <div className="flex items-center gap-2 mt-1 text-slate-500 text-sm font-medium">
+                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">{alert.userName || "Unknown Victim"}</h3>
+                                        <div className="flex items-center gap-2 mt-1 text-slate-500 dark:text-zinc-400 text-sm font-medium">
                                             <Phone size={12} />
                                             <span>{alert.contactNumber || "No Contact Info"}</span>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div className="bg-slate-50 rounded-lg p-3 mb-4 border border-slate-100 flex items-center justify-between">
+                                <div className="bg-slate-50 dark:bg-white/5 rounded-lg p-3 mb-4 border border-slate-100 dark:border-white/5 flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase">Lat</p>
-                                        <p className="font-mono text-xs font-bold">{alert.location.lat.toFixed(5)}</p>
+                                        <p className="text-[10px] text-slate-400 dark:text-zinc-500 font-bold uppercase">Lat</p>
+                                        <p className="font-mono text-xs font-bold text-slate-700 dark:text-zinc-300">{alert.location.lat.toFixed(5)}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase">Lng</p>
-                                        <p className="font-mono text-xs font-bold">{alert.location.lng.toFixed(5)}</p>
+                                        <p className="text-[10px] text-slate-400 dark:text-zinc-500 font-bold uppercase">Lng</p>
+                                        <p className="font-mono text-xs font-bold text-slate-700 dark:text-zinc-300">{alert.location.lng.toFixed(5)}</p>
                                     </div>
                                 </div>
 
                                 <button 
                                     onClick={() => handleLocate(alert)}
-                                    className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 group-hover:shadow-slate-300"
+                                    className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 text-white py-3.5 rounded-xl text-sm font-bold transition-all shadow-lg"
                                 >
                                     <Navigation size={18} />
                                     DEPLOY RESCUE UNIT
@@ -304,7 +297,7 @@ export const SOSView = () => {
             <div className="absolute top-4 left-4 z-[500] flex gap-2 pointer-events-none">
                 <button 
                     onClick={() => setViewMode('dashboard')}
-                    className="pointer-events-auto flex items-center gap-2 bg-slate-900/90 backdrop-blur-md text-white px-5 py-3 rounded-xl shadow-2xl font-bold border border-slate-700 hover:bg-slate-800 transition-all"
+                    className="pointer-events-auto flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl font-bold border border-slate-700 hover:bg-slate-800 transition-all"
                 >
                     <ArrowLeft size={18} />
                     BACK TO DASHBOARD
@@ -312,26 +305,24 @@ export const SOSView = () => {
             </div>
 
             <MapContainer 
-                center={[11.25, 75.78]} // Default center if no markers
+                center={[11.25, 75.78]} 
                 zoom={5} 
                 className="flex-1 w-full h-full z-0"
             >
+                {/* DARK MODE MAP TILES */}
                 <TileLayer
-                    attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 />
 
-                {/* Auto Zoom Helper */}
                 <FitBoundsToMarkers markers={alerts} />
 
-                {/* Render ALL Victims */}
                 {alerts.map((alert, idx) => (
                     <Marker key={idx} position={[alert.location.lat, alert.location.lng]} icon={victimIcon}>
                         <Popup>
                             <div className="p-1 min-w-[200px] text-center font-sans">
                                 <h3 className="font-bold text-lg text-slate-800">{alert.userName}</h3>
                                 <p className="text-xs text-slate-500 mb-2">SOS at {formatTime(alert.timestamp)}</p>
-                                
                                 <button 
                                     onClick={() => handleLocate(alert)}
                                     className="w-full bg-red-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 hover:bg-red-700"
@@ -343,7 +334,6 @@ export const SOSView = () => {
                     </Marker>
                 ))}
 
-                {/* Show Rescuer Location too if available */}
                 {myLocation && (
                     <Marker position={[myLocation.lat, myLocation.lng]} icon={rescuerIcon}>
                         <Popup>Your Team Location</Popup>
@@ -361,22 +351,21 @@ export const SOSView = () => {
                 <div className="flex gap-2">
                     <button 
                         onClick={() => setViewMode('dashboard')}
-                        className="pointer-events-auto flex items-center gap-2 bg-slate-900/90 backdrop-blur-md text-white px-5 py-3 rounded-xl shadow-2xl font-bold border border-slate-700 hover:bg-slate-800 transition-all"
+                        className="pointer-events-auto flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl font-bold border border-slate-700 hover:bg-slate-800 transition-all"
                     >
                         <ArrowLeft size={18} />
                         DASHBOARD
                     </button>
-                    {/* Button to switch to Global Map from Nav view */}
                     <button 
                         onClick={() => setViewMode('global-map')}
-                        className="pointer-events-auto flex items-center gap-2 bg-indigo-900/90 backdrop-blur-md text-white px-5 py-3 rounded-xl shadow-2xl font-bold border border-indigo-700 hover:bg-indigo-800 transition-all"
+                        className="pointer-events-auto flex items-center gap-2 bg-indigo-900 text-white px-5 py-3 rounded-xl shadow-2xl font-bold border border-indigo-700 hover:bg-indigo-800 transition-all"
                     >
                         <Globe size={18} />
                         GLOBAL VIEW
                     </button>
                 </div>
 
-                <div className="pointer-events-auto bg-red-600/90 backdrop-blur-md text-white px-6 py-2 rounded-xl shadow-2xl shadow-red-900/40 border border-red-500/50 flex flex-col items-end">
+                <div className="pointer-events-auto bg-red-600 text-white px-6 py-2 rounded-xl shadow-2xl shadow-red-900/40 border border-red-500/50 flex flex-col items-end">
                     <span className="text-[10px] font-bold uppercase opacity-80 tracking-widest">Target Status</span>
                     <span className="text-lg font-black tracking-tight flex items-center gap-2">
                         <span className="animate-ping w-2 h-2 bg-white rounded-full inline-block"></span>
@@ -391,12 +380,12 @@ export const SOSView = () => {
                 zoom={14} 
                 className="flex-1 w-full h-full z-0"
             >
+                {/* DARK MODE MAP TILES */}
                 <TileLayer
-                    attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 />
 
-                {/* Rescuer Marker */}
                 {myLocation && (
                     <Marker position={[myLocation.lat, myLocation.lng]} icon={rescuerIcon}>
                         <Popup>
@@ -408,7 +397,6 @@ export const SOSView = () => {
                     </Marker>
                 )}
 
-                {/* Victim Marker */}
                 <Marker position={[selectedAlert.location.lat, selectedAlert.location.lng]} icon={victimIcon}>
                     <Popup className="custom-popup" minWidth={200}>
                         <div className="p-1 font-sans">
@@ -422,7 +410,6 @@ export const SOSView = () => {
                                 <p className="text-xs text-slate-500">Signal: {formatTime(selectedAlert.timestamp)}</p>
                             </div>
 
-                            {/* GOOGLE MAPS BUTTON */}
                             <button 
                                 onClick={() => openGoogleMaps(selectedAlert.location.lat, selectedAlert.location.lng)}
                                 className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-2 px-3 rounded-md text-xs font-bold hover:bg-blue-700 transition-colors shadow-md"
@@ -434,7 +421,6 @@ export const SOSView = () => {
                     </Popup>
                 </Marker>
 
-                {/* Route Line */}
                 {myLocation && (
                     <RoutingControl 
                         start={myLocation} 
