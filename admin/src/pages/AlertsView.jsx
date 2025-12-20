@@ -1,15 +1,43 @@
-import { Filter } from "lucide-react";
+import React from 'react';
+import { Filter, BellRing } from "lucide-react";
 import { alertsData } from "../assets/data";
-import { AlertCard } from "../components/AlertCard";
+import { AlertCard } from "../components/AlertCard"; 
 
 export const AlertsView = () => (
   <div className="animate-in fade-in duration-500">
-    <div className="flex justify-between items-center mb-6">
-       <h4 className="text-xl font-bold text-gray-900">Active Alerts</h4>
-       <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm">
+    
+    {/* Header Section */}
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+       <div className="flex items-center gap-3">
+          <div className={`
+            p-2.5 rounded-xl
+            /* Light: Red background */
+            bg-red-100 text-red-600
+            /* Dark: Solid dark red background (No transparency) to hide dots */
+            dark:bg-[#2a0a0a] dark:text-red-500 dark:border dark:border-red-900/30
+          `}>
+             <BellRing size={20} />
+          </div>
+          <div>
+             <h4 className="text-xl font-bold text-slate-900 dark:text-white leading-none">Active Alerts</h4>
+             <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1 font-medium">Real-time incident feed</p>
+          </div>
+       </div>
+
+       <button className={`
+          flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm
+          /* Light: Stronger border */
+          bg-white border border-gray-300 text-slate-700 hover:bg-slate-50
+          /* Dark: Deep black with subtle border */
+          dark:bg-[#0a0a0a] dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/5
+       `}>
           <Filter size={16} /> Filter Severity
        </button>
     </div>
-    {alertsData.map(alert => <AlertCard key={alert.id} alert={alert} />)}
+
+    {/* Alert Cards Grid */}
+    <div className="space-y-4">
+       {alertsData.map(alert => <AlertCard key={alert.id} alert={alert} />)}
+    </div>
   </div>
 );
