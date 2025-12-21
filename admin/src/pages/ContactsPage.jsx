@@ -1,158 +1,247 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
-  Phone, Copy, ShieldAlert, Flame, Stethoscope, Zap, 
-  LifeBuoy, Siren, Search, Check
+  LayoutDashboard, Plus, Trash2, Edit2, Save, X, 
+  Phone, Users, CheckCircle2, AlertCircle, Loader,
+  ShieldAlert, Flame, Stethoscope, Siren, LifeBuoy, Zap
 } from "lucide-react";
 
-// --- RELEVANT DISASTER DATA ---
-const emergencyData = [
-  {
-    category: "Immediate Response",
-    items: [
-      { name: "Police Control", number: "100", icon: <ShieldAlert size={20} />, color: "blue" },
-      { name: "Fire & Rescue", number: "101", icon: <Flame size={20} />, color: "orange" },
-      { name: "Ambulance", number: "108", icon: <Stethoscope size={20} />, color: "rose" },
-      { name: "Disaster Management", number: "1077", icon: <Siren size={20} />, color: "amber" },
-    ]
-  },
-  {
-    category: "Specialized Forces",
-    items: [
-      { name: "NDRF HQ", number: "011-24363260", icon: <LifeBuoy size={20} />, color: "cyan" },
-      { name: "Coast Guard Search", number: "1554", icon: <ShieldAlert size={20} />, color: "sky" },
-      { name: "Women Helpline", number: "1091", icon: <ShieldAlert size={20} />, color: "purple" },
-    ]
-  },
-  {
-    category: "Utilities & Support",
-    items: [
-      { name: "Electricity Board", number: "1912", icon: <Zap size={20} />, color: "yellow" },
-      { name: "Gas Leakage", number: "1906", icon: <Flame size={20} />, color: "red" },
-    ]
-  }
-];
+// Dropdown options
+const ICONS = ["ShieldAlert", "Flame", "Stethoscope", "Siren", "LifeBuoy", "Zap"];
+const COLORS = ["blue", "orange", "rose", "amber", "cyan", "sky", "purple", "yellow", "red"];
 
-// --- CARD COMPONENT ---
-const ContactCard = ({ contact }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(contact.number);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+// --- SUB-COMPONENT: Contact Editor ---
+const ContactEditor = ({ contacts, onChange }) => {
+  const addContact = () => {
+    onChange([...contacts, { name: "", number: "", icon: "ShieldAlert", color: "blue" }]);
   };
 
-  // Dynamic Theme Colors
-  const themes = {
-    blue:   { bg: 'bg-blue-50 dark:bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-500/20', btn: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500' },
-    orange: { bg: 'bg-orange-50 dark:bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200 dark:border-orange-500/20', btn: 'bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500' },
-    rose:   { bg: 'bg-rose-50 dark:bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-500/20', btn: 'bg-rose-600 hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-500' },
-    amber:  { bg: 'bg-amber-50 dark:bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-500/20', btn: 'bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500' },
-    cyan:   { bg: 'bg-cyan-50 dark:bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-200 dark:border-cyan-500/20', btn: 'bg-cyan-600 hover:bg-cyan-700 dark:bg-cyan-600 dark:hover:bg-cyan-500' },
-    sky:    { bg: 'bg-sky-50 dark:bg-sky-500/10', text: 'text-sky-600 dark:text-sky-400', border: 'border-sky-200 dark:border-sky-500/20', btn: 'bg-sky-600 hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500' },
-    purple: { bg: 'bg-purple-50 dark:bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-500/20', btn: 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500' },
-    yellow: { bg: 'bg-yellow-50 dark:bg-yellow-500/10', text: 'text-yellow-600 dark:text-yellow-400', border: 'border-yellow-200 dark:border-yellow-500/20', btn: 'bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-500 dark:hover:bg-yellow-400' },
-    red:    { bg: 'bg-red-50 dark:bg-red-500/10', text: 'text-red-600 dark:text-red-400', border: 'border-red-200 dark:border-red-500/20', btn: 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500' },
+  const updateContact = (index, field, value) => {
+    const newContacts = [...contacts];
+    newContacts[index][field] = value;
+    onChange(newContacts);
   };
 
-  const theme = themes[contact.color] || themes.blue;
+  const removeContact = (index) => {
+    onChange(contacts.filter((_, i) => i !== index));
+  };
 
   return (
-    <div className={`
-      relative p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 group
-      bg-white border-gray-100 shadow-sm hover:shadow-xl
-      dark:bg-[#0a0a0a] dark:border-white/5 dark:hover:border-white/20
-    `}>
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-xl ${theme.bg} ${theme.text}`}>
-          {contact.icon}
-        </div>
-        <button 
-          onClick={handleCopy}
-          className="text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5"
-          title="Copy Number"
-        >
-          {copied ? <Check size={16} className="text-emerald-500"/> : <Copy size={16} />}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-2">
+        <h4 className="text-sm font-bold uppercase text-gray-500">Contact List</h4>
+        <button type="button" onClick={addContact} className="text-xs font-bold text-blue-600 flex items-center gap-1">
+          <Plus size={14} /> Add Number
         </button>
       </div>
-
-      {/* Info */}
-      <div>
-        <h3 className="text-gray-500 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider mb-1">{contact.name}</h3>
-        <p className="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-tight">{contact.number}</p>
-      </div>
-
-      {/* Action Button */}
-      <a 
-        href={`tel:${contact.number}`}
-        className={`mt-5 flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm text-white transition-all active:scale-95 shadow-md ${theme.btn}`}
-      >
-        <Phone size={16} fill="currentColor" /> CALL NOW
-      </a>
+      
+      {contacts.map((contact, idx) => (
+        <div key={idx} className="flex flex-col md:flex-row gap-3 p-4 bg-gray-50 dark:bg-zinc-900/50 rounded-xl border border-gray-100 dark:border-zinc-800">
+          <div className="flex-1 space-y-2">
+            <input 
+              placeholder="Agency Name (e.g. Police)"
+              value={contact.name}
+              onChange={(e) => updateContact(idx, 'name', e.target.value)}
+              className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm"
+            />
+            <div className="flex gap-2">
+               <input 
+                placeholder="Number"
+                value={contact.number}
+                onChange={(e) => updateContact(idx, 'number', e.target.value)}
+                className="flex-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono"
+              />
+              <select 
+                value={contact.icon}
+                onChange={(e) => updateContact(idx, 'icon', e.target.value)}
+                className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-2 text-xs"
+              >
+                {ICONS.map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
+              <select 
+                value={contact.color}
+                onChange={(e) => updateContact(idx, 'color', e.target.value)}
+                className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-2 text-xs"
+              >
+                {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          <button type="button" onClick={() => removeContact(idx)} className="text-red-400 hover:text-red-600 self-center">
+            <Trash2 size={18} />
+          </button>
+        </div>
+      ))}
     </div>
   );
 };
 
-// --- MAIN PAGE ---
-export function ContactsPage() {
-  const [searchTerm, setSearchTerm] = useState("");
+export default function ContactsAdmin() {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editId, setEditId] = useState(null); // ID of category being edited
+  const [notification, setNotification] = useState(null);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    category: '',
+    items: []
+  });
+
+  const API_URL = 'http://127.0.0.1:8000/api/v1/safetyinfo/emergency-contacts/';
+
+  // --- API CALLS ---
+  const fetchContacts = async () => {
+    try {
+      const res = await axios.get(API_URL);
+      setCategories(res.data);
+    } catch (err) {
+      showNotify("Failed to load data", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchContacts(); }, []);
+
+  // --- HANDLERS ---
+  const handleOpenCreate = () => {
+    setEditId(null);
+    setFormData({ category: '', items: [] });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (cat) => {
+    setEditId(cat.id);
+    setFormData(JSON.parse(JSON.stringify(cat)));
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this category and all its numbers?")) return;
+    try {
+      await axios.delete(`${API_URL}${id}/`);
+      showNotify("Category deleted", "success");
+      fetchContacts();
+    } catch (err) {
+      showNotify("Delete failed", "error");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editId) {
+        await axios.put(`${API_URL}${editId}/`, formData);
+        showNotify("Updated successfully", "success");
+      } else {
+        await axios.post(API_URL, formData);
+        showNotify("Created successfully", "success");
+      }
+      setIsModalOpen(false);
+      fetchContacts();
+    } catch (err) {
+      showNotify("Save failed", "error");
+    }
+  };
+
+  const showNotify = (msg, type) => {
+    setNotification({ msg, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#050505] p-6 md:p-10 font-sans text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#050505] font-sans text-gray-900 dark:text-gray-100 p-8">
       
-      {/* Page Header */}
-      <div className="max-w-7xl mx-auto mb-12">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
-          <div className="p-2.5 bg-red-100 dark:bg-red-500/20 rounded-xl">
-            <Siren className="text-red-600 dark:text-red-500" size={28} />
-          </div>
-          Emergency Directory
-        </h1>
-        <p className="text-gray-500 dark:text-zinc-500 max-w-2xl text-lg">
-          Authorized contact channels for Disaster Management. Tap to call immediately.
-        </p>
-
-        {/* Search Bar */}
-        <div className="mt-8 relative max-w-md">
-          <Search className="absolute left-4 top-3.5 text-gray-400 dark:text-zinc-500" size={20} />
-          <input 
-            type="text" 
-            placeholder="Search agency or number..."
-            className={`
-              w-full pl-12 pr-4 py-3 rounded-xl outline-none transition-all shadow-sm
-              bg-white border border-gray-200 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-              dark:bg-[#0a0a0a] dark:border-white/10 dark:text-white dark:focus:border-white/30 dark:focus:ring-white/5
-            `}
-            onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-          />
+      {/* Header */}
+      <div className="max-w-5xl mx-auto flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <Phone className="text-blue-600" /> Contacts Admin
+          </h1>
+          <p className="text-gray-500">Manage Emergency Directory</p>
         </div>
+        <button onClick={handleOpenCreate} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg">
+          <Plus size={20} /> Add Category
+        </button>
       </div>
 
-      {/* Grid Layout */}
-      <div className="max-w-7xl mx-auto space-y-12">
-        {emergencyData.map((section, index) => (
-          <div key={index}>
-            <h2 className="text-sm font-bold text-gray-400 dark:text-zinc-600 uppercase tracking-widest mb-6 border-b border-gray-200 dark:border-white/10 pb-2 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-zinc-700"></span>
-              {section.category}
-            </h2>
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed top-6 right-6 px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 z-50 ${notification.type === 'error' ? 'bg-red-500' : 'bg-emerald-500'} text-white`}>
+          {notification.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+          <span className="font-bold text-sm">{notification.msg}</span>
+        </div>
+      )}
+
+      {/* List */}
+      <div className="max-w-5xl mx-auto space-y-4">
+        {loading ? <div className="text-center text-gray-400 flex justify-center gap-2"><Loader className="animate-spin"/> Loading...</div> : 
+          categories.map(cat => (
+            <div key={cat.id} className="bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 flex justify-between items-start group hover:border-blue-300 transition-all">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2 mb-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  {cat.category}
+                </h3>
+                <div className="flex gap-2 flex-wrap">
+                  {cat.items.map((item, i) => (
+                    <span key={i} className={`text-xs px-2 py-1 rounded bg-${item.color}-50 text-${item.color}-600 border border-${item.color}-100 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700`}>
+                      {item.name}: {item.number}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => handleOpenEdit(cat)} className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg"><Edit2 size={18} /></button>
+                <button onClick={() => handleDelete(cat.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg"><Trash2 size={18} /></button>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#0a0a0a] w-full max-w-2xl rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center">
+              <h2 className="text-xl font-bold">{editId ? "Edit Category" : "New Category"}</h2>
+              <button onClick={() => setIsModalOpen(false)}><X size={24} className="text-gray-400 hover:text-white" /></button>
+            </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {section.items
-                .filter(item => 
-                  item.name.toLowerCase().includes(searchTerm) || 
-                  item.number.includes(searchTerm)
-                )
-                .map((contact, idx) => (
-                  <ContactCard key={idx} contact={contact} />
-              ))}
+            <div className="p-8 overflow-y-auto custom-scrollbar">
+              <form id="contactForm" onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Category Title</label>
+                  <input 
+                    required
+                    value={formData.category}
+                    onChange={e => setFormData({...formData, category: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3 font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="e.g. Specialized Forces"
+                  />
+                </div>
+                
+                <div className="border-t border-gray-100 dark:border-zinc-800 pt-6">
+                  <ContactEditor 
+                    contacts={formData.items} 
+                    onChange={newItems => setFormData({...formData, items: newItems})}
+                  />
+                </div>
+              </form>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-zinc-800 flex justify-end gap-3">
+              <button onClick={() => setIsModalOpen(false)} className="px-6 py-2 rounded-xl font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5">Cancel</button>
+              <button type="submit" form="contactForm" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg">
+                <Save size={18} /> Save
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export default ContactsPage;

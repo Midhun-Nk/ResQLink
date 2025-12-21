@@ -1,40 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Video, Mic, Activity, ShieldAlert, Stethoscope, 
-  Flame, Radio, Signal, Plus, Map
+  Flame, Radio, Signal, Plus, Map, Loader, AlertCircle, LogOut
 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
+// --- CONSTANTS ---
+// In a real app, get this from your Auth Context/Session
+const CURRENT_USER_ID = 1; 
+const API_URL = 'http://127.0.0.1:8000/api/v1/rescue-channels/';
+
 // --- THE CARD COMPONENT ---
-const ConferenceChannelCard = ({ channel, onJoin }) => {
+const ConferenceChannelCard = ({ channel, onToggleJoin }) => {
   const navigate = useNavigate();
   
-  // Theme Logic: Solid colors for Dark Mode to prevent "dotted" bleed-through
+  // Check if our simulated user is in the participants list
+  // (Assuming backend generates avatar URL based on ID: https://i.pravatar.cc/150?u=1)
+  const isJoined = channel.participants.some(url => url.includes(`u=${CURRENT_USER_ID}`));
+
   const getSectorTheme = (sector) => {
     switch(sector) {
       case 'Medical': return { 
-        bg: 'bg-rose-50 dark:bg-[#1a0505]', // Solid very dark rose
+        bg: 'bg-rose-50 dark:bg-[#1a0505]', 
         border: 'border-rose-200 dark:border-rose-900/30', 
         text: 'text-rose-700 dark:text-rose-400', 
         btn: 'bg-rose-600 hover:bg-rose-700 dark:bg-rose-600',
         icon: <Stethoscope size={18} /> 
       };
       case 'Fire': return { 
-        bg: 'bg-orange-50 dark:bg-[#1a0a05]', // Solid very dark orange
+        bg: 'bg-orange-50 dark:bg-[#1a0a05]', 
         border: 'border-orange-200 dark:border-orange-900/30', 
         text: 'text-orange-700 dark:text-orange-400', 
         btn: 'bg-orange-600 hover:bg-orange-700 dark:bg-orange-600',
         icon: <Flame size={18} /> 
       };
       case 'Police': return { 
-        bg: 'bg-blue-50 dark:bg-[#050a1a]', // Solid very dark blue
+        bg: 'bg-blue-50 dark:bg-[#050a1a]', 
         border: 'border-blue-200 dark:border-blue-900/30', 
         text: 'text-blue-700 dark:text-blue-400', 
         btn: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-600',
         icon: <ShieldAlert size={18} /> 
       };
       default: return { 
-        bg: 'bg-slate-50 dark:bg-[#111]', // Solid dark gray
+        bg: 'bg-slate-50 dark:bg-[#111]', 
         border: 'border-slate-200 dark:border-white/10', 
         text: 'text-slate-700 dark:text-slate-400', 
         btn: 'bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-black',
@@ -48,9 +57,7 @@ const ConferenceChannelCard = ({ channel, onJoin }) => {
   return (
     <div className={`
       flex flex-col h-full rounded-2xl border-solid border transition-all duration-300 overflow-hidden group
-      /* Light Mode */
       bg-white shadow-sm hover:shadow-lg hover:-translate-y-1
-      /* Dark Mode: Solid Deep Black (No Transparency) */
       dark:bg-[#0a0a0a] dark:shadow-none
       ${theme.border}
     `}>
@@ -90,18 +97,18 @@ const ConferenceChannelCard = ({ channel, onJoin }) => {
           </p>
         </div>
 
-        {/* Participants Strip */}
+        {/* Participants Strip (Dynamic) */}
         <div className="mt-auto mb-5">
           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#111] rounded-xl border border-gray-100 dark:border-white/5">
              <div className="flex items-center -space-x-2">
-                {channel.participants.slice(0, 4).map((img, i) => (
-                  <img key={i} src={img} alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-[#0a0a0a] object-cover shadow-sm"/>
-                ))}
-                {channel.totalParticipants > 4 && (
-                  <div className="w-8 h-8 rounded-full border-2 border-white dark:border-[#0a0a0a] bg-gray-200 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-gray-300">
-                    +{channel.totalParticipants - 4}
-                  </div>
-                )}
+               {channel.participants && channel.participants.slice(0, 4).map((img, i) => (
+                 <img key={i} src={img} alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-[#0a0a0a] object-cover shadow-sm transition-transform hover:scale-110 z-10"/>
+               ))}
+               {channel.totalParticipants > 4 && (
+                 <div className="w-8 h-8 rounded-full border-2 border-white dark:border-[#0a0a0a] bg-gray-200 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-gray-300 z-0">
+                   +{channel.totalParticipants - 4}
+                 </div>
+               )}
              </div>
              <div className="flex items-center gap-1.5 text-gray-500 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider">
                <Activity size={14} className={channel.isLive ? "text-emerald-500" : "text-gray-400 dark:text-zinc-700"} />
@@ -112,18 +119,29 @@ const ConferenceChannelCard = ({ channel, onJoin }) => {
 
         {/* Actions */}
         <div className="grid grid-cols-2 gap-3 mt-auto">
+          {/* Audio Listen (Placeholder) */}
           <button 
-            onClick={() => onJoin(channel.id, 'audio')} 
             className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-zinc-400 font-bold text-xs uppercase tracking-wider hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
           >
             <Mic size={16} /> Listen
           </button>
-          <button 
-            onClick={() => navigate(`/conference/${channel.id}`)}
-            className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider shadow-md transition-transform active:scale-95 ${theme.btn}`}
-          >
-            <Video size={16} /> Join
-          </button>
+
+          {/* Join / Leave Logic */}
+          {isJoined ? (
+            <button 
+              onClick={() => onToggleJoin(channel.id)}
+              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400 font-bold text-xs uppercase tracking-wider transition-all"
+            >
+              <LogOut size={16} /> Leave
+            </button>
+          ) : (
+            <button 
+              onClick={() => onToggleJoin(channel.id)}
+              className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider shadow-md transition-transform active:scale-95 ${theme.btn}`}
+            >
+              <Video size={16} /> Join
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -131,19 +149,77 @@ const ConferenceChannelCard = ({ channel, onJoin }) => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-export const RescueView = () => {
-  // Mock Data
-  const channels = [
-    { id: '1', title: 'Kerala Flood Command', description: 'Rescue boat coordination channel.', sector: 'Fire', isLive: true, totalParticipants: 12, participants: ['https://i.pravatar.cc/150?u=1', 'https://i.pravatar.cc/150?u=5', 'https://i.pravatar.cc/150?u=8'] },
-    { id: '2', title: 'Trauma Unit Alpha', description: 'Medical triage support and ambulance routing.', sector: 'Medical', isLive: true, totalParticipants: 8, participants: ['https://i.pravatar.cc/150?u=2'] },
-    { id: '3', title: 'Traffic Sector 7', description: 'Route clearance for emergency vehicles.', sector: 'Police', isLive: false, totalParticipants: 3, participants: ['https://i.pravatar.cc/150?u=3'] },
-    { id: '4', title: 'Public Helpline', description: 'General inquiries and volunteer coordination.', sector: 'General', isLive: true, totalParticipants: 24, participants: ['https://i.pravatar.cc/150?u=4', 'https://i.pravatar.cc/150?u=9'] }
-  ];
+export default function RescueView() {
+  const [channels, setChannels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleJoin = (id, type) => { console.log(id, type); };
+  // Initial Fetch
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(API_URL);
+        setChannels(response.data);
+      } catch (err) {
+        console.error("Failed to fetch channels", err);
+        setError("Failed to load rescue channels.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChannels();
+  }, []);
+
+  // --- HANDLE JOIN / LEAVE ---
+  const handleToggleJoin = async (channelId) => {
+    try {
+      // 1. Optimistic UI Update (optional, but makes it feel faster)
+      // For now, we wait for server response to ensure accuracy of the participant list
+
+      // 2. Call API
+      const response = await axios.post(`${API_URL}${channelId}/join_leave/`, {
+        user_id: CURRENT_USER_ID 
+      });
+
+      const { status, totalParticipants, participants } = response.data;
+
+      // 3. Update State with new data from server
+      setChannels(prevChannels => prevChannels.map(ch => 
+        ch.id === channelId 
+          ? { ...ch, totalParticipants, participants } // Update specific channel
+          : ch
+      ));
+
+      // Optional: Browser Alert or Toast
+      // alert(`Successfully ${status} the channel.`);
+
+    } catch (err) {
+      console.error("Join/Leave failed", err);
+      alert("Failed to update participation status.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-[#050505] flex items-center justify-center text-gray-500 gap-3">
+        <Loader className="animate-spin" size={24} /> 
+        <span className="font-bold text-sm tracking-wider uppercase">Loading Comms...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-[#050505] flex items-center justify-center text-red-500 gap-3">
+        <AlertCircle size={24} /> 
+        <span className="font-bold">{error}</span>
+      </div>
+    );
+  }
 
   return (
-    // Solid background container to block any global patterns
     <div className="animate-in fade-in duration-500 min-h-screen bg-gray-50 dark:bg-[#050505] p-6">
       
       {/* Header Section */}
@@ -169,11 +245,23 @@ export const RescueView = () => {
       </div>
 
       {/* Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 w-full pb-10">
-        {channels.map((channel) => (
-          <ConferenceChannelCard key={channel.id} channel={channel} onJoin={handleJoin} />
-        ))}
-      </div>
+      {channels.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 w-full pb-10">
+          {channels.map((channel) => (
+            <ConferenceChannelCard 
+              key={channel.id} 
+              channel={channel} 
+              onToggleJoin={handleToggleJoin} // Pass the handler
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400 border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-3xl">
+          <Radio size={48} className="mb-4 opacity-20" />
+          <p className="font-bold">No Active Channels</p>
+          <p className="text-sm">Start a new channel to begin coordination.</p>
+        </div>
+      )}
     </div>
   );
-};
+}

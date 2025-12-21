@@ -1,36 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Phone, Copy, ShieldAlert, Flame, Stethoscope, Zap, 
-  LifeBuoy, Siren, Search, Check
+  LifeBuoy, Siren, Search, Check, Loader
 } from "lucide-react";
 
-// --- RELEVANT DISASTER DATA ---
-const emergencyData = [
-  {
-    category: "Immediate Response",
-    items: [
-      { name: "Police Control", number: "100", icon: <ShieldAlert size={20} />, color: "blue" },
-      { name: "Fire & Rescue", number: "101", icon: <Flame size={20} />, color: "orange" },
-      { name: "Ambulance", number: "108", icon: <Stethoscope size={20} />, color: "rose" },
-      { name: "Disaster Management", number: "1077", icon: <Siren size={20} />, color: "amber" },
-    ]
-  },
-  {
-    category: "Specialized Forces",
-    items: [
-      { name: "NDRF HQ", number: "011-24363260", icon: <LifeBuoy size={20} />, color: "cyan" },
-      { name: "Coast Guard Search", number: "1554", icon: <ShieldAlert size={20} />, color: "sky" },
-      { name: "Women Helpline", number: "1091", icon: <ShieldAlert size={20} />, color: "purple" },
-    ]
-  },
-  {
-    category: "Utilities & Support",
-    items: [
-      { name: "Electricity Board", number: "1912", icon: <Zap size={20} />, color: "yellow" },
-      { name: "Gas Leakage", number: "1906", icon: <Flame size={20} />, color: "red" },
-    ]
-  }
-];
+// --- ICON MAPPING ---
+// Maps the string 'icon_name' from your Database to the actual Component
+const ICON_MAP = {
+  "ShieldAlert": <ShieldAlert size={20} />,
+  "Flame": <Flame size={20} />,
+  "Stethoscope": <Stethoscope size={20} />,
+  "Siren": <Siren size={20} />,
+  "LifeBuoy": <LifeBuoy size={20} />,
+  "Zap": <Zap size={20} />,
+  // Add a fallback just in case
+  "default": <ShieldAlert size={20} />
+};
 
 // --- CARD COMPONENT ---
 const ContactCard = ({ contact }) => {
@@ -56,6 +42,8 @@ const ContactCard = ({ contact }) => {
   };
 
   const theme = themes[contact.color] || themes.blue;
+  // Get the correct icon component from the map, or use default
+  const IconComponent = ICON_MAP[contact.icon] || ICON_MAP["default"];
 
   return (
     <div className={`
@@ -66,7 +54,7 @@ const ContactCard = ({ contact }) => {
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className={`p-3 rounded-xl ${theme.bg} ${theme.text}`}>
-          {contact.icon}
+          {IconComponent}
         </div>
         <button 
           onClick={handleCopy}
@@ -97,6 +85,44 @@ const ContactCard = ({ contact }) => {
 // --- MAIN PAGE ---
 export function ContactsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [emergencyData, setEmergencyData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // --- API FETCH ---
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        setLoading(true);
+        // Replace with your actual backend URL
+        const response = await axios.get('http://127.0.0.1:8000/api/v1/safetyinfo/emergency-contacts/');
+        setEmergencyData(response.data);
+      } catch (err) {
+        console.error("Failed to fetch contacts:", err);
+        setError("Unable to load emergency contacts at this time.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContacts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-[#050505] flex items-center justify-center text-gray-500 gap-2">
+        <Loader className="animate-spin" /> Loading Directory...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-[#050505] flex items-center justify-center text-red-500 gap-2">
+        <ShieldAlert /> {error}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#050505] p-6 md:p-10 font-sans text-gray-800 dark:text-gray-200 transition-colors duration-300">
@@ -131,25 +157,43 @@ export function ContactsPage() {
 
       {/* Grid Layout */}
       <div className="max-w-7xl mx-auto space-y-12">
-        {emergencyData.map((section, index) => (
-          <div key={index}>
-            <h2 className="text-sm font-bold text-gray-400 dark:text-zinc-600 uppercase tracking-widest mb-6 border-b border-gray-200 dark:border-white/10 pb-2 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-zinc-700"></span>
-              {section.category}
-            </h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {section.items
-                .filter(item => 
-                  item.name.toLowerCase().includes(searchTerm) || 
-                  item.number.includes(searchTerm)
-                )
-                .map((contact, idx) => (
+        {emergencyData.map((section, index) => {
+          // Filter items based on search term before rendering
+          const filteredItems = section.items.filter(item => 
+            item.name.toLowerCase().includes(searchTerm) || 
+            item.number.includes(searchTerm)
+          );
+
+          // If no items match in this category, don't render the category
+          if (filteredItems.length === 0) return null;
+
+          return (
+            <div key={index}>
+              <h2 className="text-sm font-bold text-gray-400 dark:text-zinc-600 uppercase tracking-widest mb-6 border-b border-gray-200 dark:border-white/10 pb-2 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-zinc-700"></span>
+                {section.category}
+              </h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredItems.map((contact, idx) => (
                   <ContactCard key={idx} contact={contact} />
-              ))}
+                ))}
+              </div>
             </div>
+          );
+        })}
+        
+        {/* Empty State if search yields no results across all sections */}
+        {emergencyData.every(section => 
+           section.items.filter(item => 
+             item.name.toLowerCase().includes(searchTerm) || 
+             item.number.includes(searchTerm)
+           ).length === 0
+        ) && (
+          <div className="text-center py-20 text-gray-400">
+            <p>No contacts found matching "{searchTerm}"</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

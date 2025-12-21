@@ -1,484 +1,396 @@
+
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
-  ShieldCheck, Droplets, Flame, Zap, Wind, 
-  BriefcaseMedical, AlertTriangle, 
-  Info, ChevronRight, Waves, 
-  MountainSnow, Skull, ThermometerSun, Volume2, 
-  Activity, ExternalLink, Loader
+  LayoutDashboard, Plus, Trash2, Edit2, Save, X, 
+  ChevronRight, AlertCircle, CheckCircle2, Loader,ShieldCheck ,
+  Droplets, Flame, Zap, Wind, Waves, MountainSnow, Skull, ThermometerSun, Activity
 } from "lucide-react";
 
-// --- SAFETY DATA (Static Protocols) ---
-const safetyData = {
-  flood: {
-    title: "Flood & Flash Floods",
-    icon: <Droplets />,
-    color: "blue",
-    phases: {
-      before: [
-        "Know the elevation of your property in relation to flood plains.",
-        "Install check valves in sewer traps to prevent floodwater backing up.",
-        "Seal walls in basements with waterproofing compounds.",
-        "Elevate the furnace, water heater, and electric panel."
-      ],
-      during: [
-        "Turn off utilities at the main switches or valves.",
-        "Disconnect electrical appliances (do not touch if you are wet).",
-        "Do not walk through moving water. Six inches is enough to knock you down.",
-        "If trapped in a building, move to the highest level (roof) and signal for help."
-      ],
-      after: [
-        "Listen for news reports to learn whether the community's water supply is safe.",
-        "Avoid floodwaters; water may be contaminated by oil, gasoline, or raw sewage.",
-        "Clean and disinfect everything that got wet.",
-        "Watch out for snakes and animals that may have entered your home."
-      ]
-    }
-  },
-  fire: {
-    title: "Structural Fire",
-    icon: <Flame />,
-    color: "orange",
-    phases: {
-      before: [
-        "Install smoke alarms on every level of your home.",
-        "Plan two ways out of every room.",
-        "Check electrical wiring and replace frayed cords immediately.",
-        "Keep a fire extinguisher in the kitchen and garage."
-      ],
-      during: [
-        "Crawl low under smoke. The cleanest air is 12 to 24 inches off the floor.",
-        "Test doors with the back of your hand before opening. If hot, use another exit.",
-        "If your clothes catch fire: Stop, Drop, and Roll.",
-        "Never use an elevator during a fire."
-      ],
-      after: [
-        "Do not enter the building until authorities say it is safe.",
-        "Check for structural damage to roofs and walls.",
-        "Discard food, beverages, and medicines exposed to heat or smoke."
-      ]
-    }
-  },
-  earthquake: {
-    title: "Earthquake",
-    icon: <Zap />,
-    color: "amber",
-    phases: {
-      before: [
-        "Secure heavy furniture (bookshelves, water heaters) to wall studs.",
-        "Practice 'Drop, Cover, and Hold On'.",
-        "Locate safe spots in each room (under sturdy tables).",
-        "Store breakable items in low, closed cabinets with latches."
-      ],
-      during: [
-        "If indoors: Drop to the ground, Cover your head, Hold on to shelter.",
-        "Stay away from glass, windows, outside doors, and walls.",
-        "If outdoors: Move to a clear area away from trees, signs, and buildings.",
-        "If driving: Pull over to a clear location and stop."
-      ],
-      after: [
-        "Expect aftershocks. Each time you feel one, drop, cover, and hold on.",
-        "Check for gas leaks. If you smell gas, turn off the main valve and leave.",
-        "Open cabinets cautiously. Beware of objects that can fall off shelves."
-      ]
-    }
-  },
-  cyclone: {
-    title: "Cyclone & Storms",
-    icon: <Wind />,
-    color: "teal",
-    phases: {
-      before: [
-        "Trim trees and shrubs around your home to make them more wind resistant.",
-        "Clear loose and clogged rain gutters and downspouts.",
-        "Bring in outdoor furniture, decorations, and garbage cans.",
-        "Board up windows or use storm shutters."
-      ],
-      during: [
-        "Stay indoors and away from windows and glass doors.",
-        "Close all interior doors—secure and brace external doors.",
-        "Lie on the floor under a table or another sturdy object.",
-        "Do not be fooled if the eye of the storm passes (winds will return)."
-      ],
-      after: [
-        "Stay out of damaged buildings.",
-        "Watch out for fallen power lines and report them.",
-        "Use battery-powered flashlights. Do not use candles (gas leak risk)."
-      ]
-    }
-  },
-  tsunami: {
-    title: "Tsunami",
-    icon: <Waves />,
-    color: "cyan",
-    phases: {
-      before: ["Map out evacuation routes to high ground (100ft above sea level).", "Listen for warning sirens."],
-      during: ["If you feel an earthquake near the coast, move to high ground immediately.", "Do not wait for an official warning.", "Never go to the beach to watch the waves."],
-      after: ["Stay away from coastal areas until officials say it is safe.", "Be aware of secondary waves which can be larger."]
-    }
-  },
-  landslide: {
-    title: "Landslide",
-    icon: <MountainSnow />,
-    color: "stone",
-    phases: {
-      before: ["Monitor drainage patterns on land.", "Plant ground cover on slopes."],
-      during: ["Listen for unusual sounds like trees cracking or boulders knocking.", "Move away from the path of the slide.", "Curl into a tight ball and protect your head."],
-      after: ["Stay away from the slide area (flooding may follow).", "Check for injured trapped persons without entering the slide area."]
-    }
-  },
-  chemical: {
-    title: "Chemical Leak",
-    icon: <Skull />,
-    color: "purple",
-    phases: {
-      before: ["Make an internal shelter kit (duct tape, plastic sheeting)."],
-      during: ["Close all windows, vents, and fireplace dampers.", "Turn off air conditioning.", "Go into an interior room and seal it (Shelter-in-place)."],
-      after: ["Open windows to ventilate once 'All Clear' is given.", "Shower and change clothes immediately."]
-    }
-  },
-  heatwave: {
-    title: "Extreme Heat",
-    icon: <ThermometerSun />,
-    color: "rose",
-    phases: {
-      before: ["Install window reflectors.", "Insulate water pipes."],
-      during: ["Stay indoors during the hottest part of the day.", "Drink plenty of water even if not thirsty.", "Wear light, loose-fitting clothing."],
-      after: ["Continue to hydrate.", "Check on elderly neighbors."]
-    }
-  }
-};
+// Icons available for selection
+const AVAILABLE_ICONS = [
+  "Droplets", "Flame", "Zap", "Wind", "Waves", 
+  "MountainSnow", "Skull", "ThermometerSun", "Activity"
+];
 
-// --- COMPONENT: FIRST AID CARD ---
-const FirstAidCard = ({ title, steps, type }) => (
-  <div className={`
-    p-5 rounded-2xl border-solid border shadow-sm transition-all group
-    bg-white border-gray-200
-    dark:bg-[#0a0a0a] dark:border-zinc-800
-  `}>
-    <div className="flex items-center gap-3 mb-3">
-      <div className={`
-        p-2 rounded-lg
-        ${type === 'critical' 
-          ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-500' 
-          : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-500'}
-      `}>
-        <Activity size={18} />
-      </div>
-      <h4 className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-blue-500 transition-colors">{title}</h4>
-    </div>
-    <ul className="space-y-2">
-      {steps.map((step, i) => (
-        <li key={i} className="text-xs text-gray-600 dark:text-zinc-400 flex items-start gap-2">
-          <span className="font-bold text-gray-400 dark:text-zinc-600">{i+1}.</span> {step}
-        </li>
-      ))}
-    </ul>
-  </div>
-);
+// Colors available for selection
+const AVAILABLE_COLORS = [
+  "blue", "orange", "amber", "teal", "cyan", "stone", "purple", "rose"
+];
 
-// --- COMPONENT: SOS SIGNALS ---
-const SOSGuide = () => (
-  <div className={`
-    rounded-2xl p-6 mt-6 border-solid border
-    bg-slate-900 text-white border-slate-800
-    dark:bg-[#0a0a0a] dark:border-zinc-800
-  `}>
-    <div className="flex items-center gap-3 mb-4">
-      <Volume2 className="text-emerald-400" />
-      <h3 className="font-bold text-white">Distress Signals</h3>
-    </div>
-    <div className="grid grid-cols-2 gap-4 text-sm">
-      <div className="bg-slate-800 dark:bg-zinc-900 p-3 rounded-xl border border-transparent dark:border-zinc-800">
-        <span className="block text-slate-400 text-xs uppercase mb-1 font-bold tracking-wider">Whistle Code</span>
-        <span className="font-mono font-bold text-emerald-400">3 Short Blasts</span>
-        <p className="text-xs text-slate-500 mt-1">(Pause 1 min, Repeat)</p>
-      </div>
-      <div className="bg-slate-800 dark:bg-zinc-900 p-3 rounded-xl border border-transparent dark:border-zinc-800">
-        <span className="block text-slate-400 text-xs uppercase mb-1 font-bold tracking-wider">Visual (Torch)</span>
-        <span className="font-mono font-bold text-emerald-400">3 Short Flashes</span>
-        <p className="text-xs text-slate-500 mt-1">(Pause 1 min, Repeat)</p>
-      </div>
-      <div className="col-span-2 bg-slate-800 dark:bg-zinc-900 p-3 rounded-xl flex justify-between items-center border border-transparent dark:border-zinc-800">
-        <div>
-           <span className="block text-slate-400 text-xs uppercase font-bold tracking-wider">Ground to Air</span>
-           <span className="font-bold text-white">Large "X" or "V"</span>
-        </div>
-        <AlertTriangle className="text-amber-500" size={20}/>
-      </div>
-    </div>
-  </div>
-);
-
-// --- MAIN PAGE ---
-export default function SafetyInfoPage() {
-  const [selectedDisaster, setSelectedDisaster] = useState('flood');
-  const [phase, setPhase] = useState('during'); 
-  
-  // API State
-  const [liveReports, setLiveReports] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // Mapping internal keys to ReliefWeb API queries
-  const apiQueryMap = {
-    flood: "flood",
-    fire: "wild fire",
-    earthquake: "earthquake",
-    cyclone: "tropical cyclone",
-    tsunami: "tsunami",
-    landslide: "land slide",
-    chemical: "technological disaster",
-    heatwave: "heat wave"
+// --- SUB-COMPONENT: Phase Editor (Handles the list of strings) ---
+const PhaseEditor = ({ phaseName, steps, onChange }) => {
+  const addStep = () => {
+    onChange([...steps, ""]);
   };
 
-  // --- API FETCH EFFECT ---
-  useEffect(() => {
-    // Only fetch if on 'live' tab
-    if (phase !== 'live') return;
-
-    const fetchReports = async () => {
-      setLoading(true);
-      const query = apiQueryMap[selectedDisaster];
-      // ReliefWeb API Endpoint
-      const url = `https://api.reliefweb.int/v1/reports?appname=rw-docs&query[value]=${query}&limit=5&sort[]=date:desc`;
-
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-        setLiveReports(data.data || []);
-      } catch (error) {
-        console.error("Failed to fetch disaster data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReports();
-  }, [selectedDisaster, phase]);
-
-  const activeData = safetyData[selectedDisaster];
-
-  // Helper to get theme colors
-  const getColorClasses = (color) => {
-    const configs = {
-      blue:   { bg: 'bg-blue-50 dark:bg-blue-900/10', text: 'text-blue-700 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-900/30', accent: 'bg-blue-600 dark:bg-blue-500' },
-      orange: { bg: 'bg-orange-50 dark:bg-orange-900/10', text: 'text-orange-700 dark:text-orange-400', border: 'border-orange-200 dark:border-orange-900/30', accent: 'bg-orange-600 dark:bg-orange-500' },
-      amber:  { bg: 'bg-amber-50 dark:bg-amber-900/10', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-900/30', accent: 'bg-amber-600 dark:bg-amber-500' },
-      teal:   { bg: 'bg-teal-50 dark:bg-teal-900/10', text: 'text-teal-700 dark:text-teal-400', border: 'border-teal-200 dark:border-teal-900/30', accent: 'bg-teal-600 dark:bg-teal-500' },
-      cyan:   { bg: 'bg-cyan-50 dark:bg-cyan-900/10', text: 'text-cyan-700 dark:text-cyan-400', border: 'border-cyan-200 dark:border-cyan-900/30', accent: 'bg-cyan-600 dark:bg-cyan-500' },
-      stone:  { bg: 'bg-stone-50 dark:bg-stone-900/10', text: 'text-stone-700 dark:text-stone-400', border: 'border-stone-200 dark:border-stone-900/30', accent: 'bg-stone-600 dark:bg-stone-500' },
-      purple: { bg: 'bg-purple-50 dark:bg-purple-900/10', text: 'text-purple-700 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-900/30', accent: 'bg-purple-600 dark:bg-purple-500' },
-      rose:   { bg: 'bg-rose-50 dark:bg-rose-900/10', text: 'text-rose-700 dark:text-rose-400', border: 'border-rose-200 dark:border-rose-900/30', accent: 'bg-rose-600 dark:bg-rose-500' },
-    };
-    return configs[color] || configs.blue;
+  const updateStep = (index, value) => {
+    const newSteps = [...steps];
+    newSteps[index] = value;
+    onChange(newSteps);
   };
 
-  const colors = getColorClasses(activeData.color);
+  const removeStep = (index) => {
+    const newSteps = steps.filter((_, i) => i !== index);
+    onChange(newSteps);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#050505] p-4 md:p-8 font-sans transition-colors duration-300">
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-sm font-bold uppercase text-gray-500 dark:text-zinc-500 tracking-wider">
+          {phaseName} Event
+        </h4>
+        <button 
+          type="button"
+          onClick={addStep}
+          className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-700 font-bold"
+        >
+          <Plus size={14} /> Add Step
+        </button>
+      </div>
+      <div className="space-y-2">
+        {steps.map((step, idx) => (
+          <div key={idx} className="flex gap-2">
+            <span className="text-gray-400 text-sm py-2 w-6 text-center">{idx + 1}.</span>
+            <input 
+              type="text" 
+              value={step}
+              onChange={(e) => updateStep(idx, e.target.value)}
+              className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              placeholder={`Step ${idx + 1}`}
+            />
+            <button 
+              type="button"
+              onClick={() => removeStep(idx)}
+              className="text-red-400 hover:text-red-600 p-2"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        ))}
+        {steps.length === 0 && (
+          <div className="text-sm text-gray-400 italic text-center py-2 border border-dashed border-gray-200 dark:border-zinc-800 rounded-lg">
+            No steps defined.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default function SafetyInfoPage() {
+  const [disasters, setDisasters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false); // false = create, true = edit
+  
+  // Form State
+  const [formData, setFormData] = useState({
+    slug: '',
+    title: '',
+    icon_name: 'Activity',
+    color_theme: 'blue',
+    phases: {
+      before: [],
+      during: [],
+      after: []
+    }
+  });
+
+  const [notification, setNotification] = useState(null);
+
+  // --- API CALLS ---
+  const fetchDisasters = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('http://127.0.0.1:8000/api/v1/safetyinfo/disasters/');
+      const data = Array.isArray(res.data) ? res.data : res.data.results;
+      setDisasters(data);
+    } catch (err) {
+      showNotify("Failed to fetch data", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDisasters();
+  }, []);
+
+  // --- HANDLERS ---
+
+  const handleOpenCreate = () => {
+    setEditMode(false);
+    setFormData({
+      slug: '', title: '', icon_name: 'Activity', color_theme: 'blue',
+      phases: { before: [], during: [], after: [] }
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (disaster) => {
+    setEditMode(true);
+    // Deep copy to ensure we don't mutate state directly
+    setFormData(JSON.parse(JSON.stringify(disaster))); 
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (slug) => {
+    if (!window.confirm("Are you sure you want to delete this disaster?")) return;
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/v1/safetyinfo/disasters/${slug}/`);
+      showNotify("Deleted successfully", "success");
+      fetchDisasters();
+    } catch (err) {
+      showNotify("Failed to delete", "error");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editMode) {
+        await axios.put(`http://127.0.0.1:8000/api/v1/safetyinfo/disasters/${formData.slug}/`, formData);
+        showNotify("Updated successfully", "success");
+      } else {
+        await axios.post(`http://127.0.0.1:8000/api/v1/safetyinfo/disasters/`, formData);
+        showNotify("Created successfully", "success");
+      }
+      setIsModalOpen(false);
+      fetchDisasters();
+    } catch (err) {
+      console.error(err);
+      showNotify("Operation failed. Check console.", "error");
+    }
+  };
+
+  // Helper to show toast
+  const showNotify = (msg, type) => {
+    setNotification({ msg, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-[#050505] font-sans text-gray-900 dark:text-gray-100 p-8">
       
-      {/* HEADER */}
-      <div className="max-w-7xl mx-auto mb-8 relative z-10">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
-          <ShieldCheck className="text-emerald-600 dark:text-emerald-500" size={36} />
-          Civil Defense Manual
-        </h1>
-        <p className="text-gray-500 dark:text-zinc-500">Comprehensive disaster protocols and real-time intelligence.</p>
+      {/* --- HEADER --- */}
+      <div className="max-w-6xl mx-auto flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <LayoutDashboard className="text-blue-600" /> Safety Informations
+          </h1>
+          <p className="text-gray-500 mt-1">Manage Disaster Protocols</p>
+        </div>
+        <button 
+          onClick={handleOpenCreate}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
+        >
+          <Plus size={20} /> New Entry
+        </button>
       </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-4 gap-8">
-        
-        {/* --- LEFT SIDEBAR: NAVIGATION --- */}
-        <div className="xl:col-span-1 space-y-2 h-fit overflow-y-auto max-h-[500px] xl:max-h-none custom-scrollbar">
-          <h3 className="text-xs font-bold text-gray-400 dark:text-zinc-600 uppercase tracking-widest mb-3 px-2">Disaster Scenarios</h3>
-          {Object.keys(safetyData).map((key) => (
-            <button
-              key={key}
-              onClick={() => setSelectedDisaster(key)}
-              className={`
-                w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-bold border border-transparent
-                ${selectedDisaster === key 
-                  ? 'bg-white shadow-md text-gray-900 border-gray-200 dark:bg-[#0a0a0a] dark:text-white dark:border-zinc-800' 
-                  : 'text-gray-500 hover:bg-white/60 hover:text-gray-700 dark:text-zinc-500 dark:hover:bg-white/5 dark:hover:text-zinc-300'}
-              `}
-            >
-              <div className={`p-2 rounded-lg ${selectedDisaster === key ? 'bg-gray-100 dark:bg-white/10' : 'bg-transparent'}`}>
-                {React.cloneElement(safetyData[key].icon, { size: 18 })}
-              </div>
-              {safetyData[key].title}
-              {selectedDisaster === key && <ChevronRight className="ml-auto text-gray-400 dark:text-zinc-600" size={16} />}
-            </button>
-          ))}
+      {/* --- NOTIFICATION TOAST --- */}
+      {notification && (
+        <div className={`fixed top-6 right-6 px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-in slide-in-from-top-5 z-50 ${notification.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
+          {notification.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+          <span className="font-bold text-sm">{notification.msg}</span>
         </div>
+      )}
 
-        {/* --- CENTER: MAIN CONTENT --- */}
-        <div className="xl:col-span-2">
-          <div className="bg-white dark:bg-[#0a0a0a] rounded-3xl border border-solid border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden min-h-[600px] flex flex-col transition-colors duration-300">
+      {/* --- DATA TABLE --- */}
+      <div className="max-w-6xl mx-auto bg-white dark:bg-[#0a0a0a] rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="p-12 flex justify-center text-gray-400 gap-2">
+            <Loader className="animate-spin" /> Loading...
+          </div>
+        ) : (
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-100 dark:border-zinc-800">
+                <th className="p-5 text-xs font-bold uppercase text-gray-400 tracking-wider">Disaster</th>
+                <th className="p-5 text-xs font-bold uppercase text-gray-400 tracking-wider">Slug (ID)</th>
+                <th className="p-5 text-xs font-bold uppercase text-gray-400 tracking-wider">Theme</th>
+                <th className="p-5 text-xs font-bold uppercase text-gray-400 tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {disasters.map((item) => (
+                <tr key={item.slug} className="border-b border-gray-50 dark:border-zinc-800/50 hover:bg-gray-50 dark:hover:bg-zinc-900/30 transition-colors">
+                  <td className="p-5 font-bold flex items-center gap-3">
+                    <span className="p-2 bg-gray-100 dark:bg-zinc-800 rounded-lg text-gray-500">
+                       <Activity size={16} /> {/* Placeholder icon */}
+                    </span>
+                    {item.title}
+                  </td>
+                  <td className="p-5 text-sm font-mono text-gray-500">{item.slug}</td>
+                  <td className="p-5">
+                    <span className={`px-2 py-1 rounded text-xs font-bold uppercase bg-${item.color_theme}-100 text-${item.color_theme}-600 dark:bg-white/10 dark:text-gray-300`}>
+                      {item.color_theme}
+                    </span>
+                  </td>
+                  <td className="p-5 text-right flex justify-end gap-2">
+                    <button 
+                      onClick={() => handleOpenEdit(item)}
+                      className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 rounded-lg transition-colors"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(item.slug)}
+                      className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* --- MODAL --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#0a0a0a] w-full max-w-4xl max-h-[90vh] rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-2xl flex flex-col">
             
-            {/* Hero Section of Card */}
-            <div className={`p-8 border-b border-solid transition-colors duration-300 ${colors.bg} ${colors.border}`}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className={`p-4 rounded-2xl shadow-sm bg-white dark:bg-[#0a0a0a] ${colors.text}`}>
-                  {React.cloneElement(activeData.icon, { size: 40 })}
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{activeData.title}</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-white/60 dark:bg-white/10 ${colors.text}`}>OFFICIAL PROTOCOL</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Phase Tabs */}
-              <div className="flex p-1 bg-white/60 dark:bg-black/20 backdrop-blur-sm rounded-xl border border-solid border-white/50 dark:border-white/5">
-                {['before', 'during', 'after'].map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPhase(p)}
-                    className={`
-                      flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all
-                      ${phase === p 
-                        ? 'bg-white shadow-sm text-gray-900 dark:bg-[#1a1a1a] dark:text-white' 
-                        : 'text-gray-500 hover:text-gray-700 dark:text-zinc-500 dark:hover:text-zinc-300'}
-                    `}
-                  >
-                    {p}
-                  </button>
-                ))}
-                {/* Live Intel Tab */}
-                <button
-                    onClick={() => setPhase('live')}
-                    className={`
-                      flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1
-                      ${phase === 'live' 
-                        ? 'bg-red-500 shadow-sm text-white' 
-                        : 'text-red-500/70 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'}
-                    `}
-                  >
-                   <Activity size={12} /> LIVE
-                  </button>
-              </div>
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center bg-gray-50 dark:bg-zinc-900/30 rounded-t-3xl">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                {editMode ? <Edit2 size={20} className="text-blue-500"/> : <Plus size={20} className="text-emerald-500"/>}
+                {editMode ? "Edit Disaster" : "Create New Disaster"}
+              </h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white">
+                <X size={24} />
+              </button>
             </div>
 
-            {/* Content Area */}
-            <div className="p-8 flex-1">
-              
-              {/* CONDITION: If Live Tab is selected */}
-              {phase === 'live' ? (
-                <div className="animate-in fade-in duration-500">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                           <Activity className="text-red-500" size={20} />
-                           Real-Time Global Reports
-                        </h3>
-                        <span className="text-xs font-medium px-2 py-1 bg-gray-100 dark:bg-white/5 rounded text-gray-500">Source: ReliefWeb API</span>
+            {/* Modal Body (Scrollable) */}
+            <div className="p-8 overflow-y-auto custom-scrollbar">
+              <form id="disasterForm" onSubmit={handleSubmit} className="space-y-8">
+                
+                {/* Section 1: Metadata */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Title</label>
+                    <input 
+                      required
+                      type="text" 
+                      value={formData.title}
+                      onChange={e => setFormData({...formData, title: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3 font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="e.g. Flash Flood"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Slug (Unique ID)</label>
+                    <input 
+                      required
+                      disabled={editMode} // Slug is PK, cannot change on edit
+                      type="text" 
+                      value={formData.slug}
+                      onChange={e => setFormData({...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
+                      className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
+                      placeholder="e.g. flash-flood"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Icon</label>
+                    <select 
+                      value={formData.icon_name}
+                      onChange={e => setFormData({...formData, icon_name: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      {AVAILABLE_ICONS.map(icon => <option key={icon} value={icon}>{icon}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Color Theme</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {AVAILABLE_COLORS.map(color => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setFormData({...formData, color_theme: color})}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${formData.color_theme === color ? 'border-gray-900 dark:border-white scale-110' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                          style={{ backgroundColor: color === 'stone' ? '#78716c' : color }} 
+                        />
+                      ))}
                     </div>
-
-                    {loading ? (
-                         <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-3">
-                            <Loader className="animate-spin" size={32} />
-                            <p className="text-sm font-medium">Scanning global networks...</p>
-                         </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {liveReports.length > 0 ? (
-                                liveReports.map((report) => (
-                                    <a 
-                                        key={report.id}
-                                        href={report.href}
-                                        target="_blank" 
-                                        rel="noreferrer"
-                                        className="group block p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-900/10 border border-gray-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 transition-all"
-                                    >
-                                        <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-2 line-clamp-2">
-                                            {report.fields?.title || report.title}
-                                        </h4>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] uppercase font-bold text-gray-400 bg-white dark:bg-black/40 px-2 py-1 rounded border border-gray-100 dark:border-white/5">
-                                                Situation Report
-                                            </span>
-                                            <ExternalLink size={14} className="text-gray-400 group-hover:text-blue-500" />
-                                        </div>
-                                    </a>
-                                ))
-                            ) : (
-                                <div className="text-center py-12 text-gray-400 text-sm">
-                                    No immediate critical reports found for this category.
-                                </div>
-                            )}
-                        </div>
-                    )}
+                  </div>
                 </div>
-              ) : (
-                // CONDITION: Standard Static Phases (Before, During, After)
-                <>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2 capitalize">
-                    <div className={`w-2 h-2 rounded-full ${colors.accent}`}></div>
-                    Actions: {phase} the event
+
+                <div className="border-t border-gray-100 dark:border-zinc-800 my-6"></div>
+
+                {/* Section 2: Protocols */}
+                <div>
+                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                    <ShieldCheck size={20} className="text-emerald-500"/> Safety Protocols
                   </h3>
                   
-                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {activeData.phases[phase].map((item, index) => (
-                      <div key={index} className="flex gap-4 group">
-                        <div className={`
-                          mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white shadow-sm transition-transform group-hover:scale-110
-                          ${colors.accent}
-                        `}>
-                          {index + 1}
-                        </div>
-                        <div className="pt-1.5 pb-4 border-b border-solid border-gray-100 dark:border-zinc-800 w-full">
-                          <p className="text-gray-700 dark:text-zinc-300 leading-relaxed font-medium">{item}</p>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Before */}
+                    <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                      <PhaseEditor 
+                        phaseName="Before" 
+                        steps={formData.phases.before}
+                        onChange={(newSteps) => setFormData({
+                          ...formData, 
+                          phases: { ...formData.phases, before: newSteps }
+                        })}
+                      />
+                    </div>
+                    
+                    {/* During */}
+                    <div className="bg-orange-50/50 dark:bg-orange-900/10 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/30">
+                       <PhaseEditor 
+                        phaseName="During" 
+                        steps={formData.phases.during}
+                        onChange={(newSteps) => setFormData({
+                          ...formData, 
+                          phases: { ...formData.phases, during: newSteps }
+                        })}
+                      />
+                    </div>
+
+                    {/* After */}
+                    <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
+                       <PhaseEditor 
+                        phaseName="After" 
+                        steps={formData.phases.after}
+                        onChange={(newSteps) => setFormData({
+                          ...formData, 
+                          phases: { ...formData.phases, after: newSteps }
+                        })}
+                      />
+                    </div>
                   </div>
-                </>
-              )}
+                </div>
+
+              </form>
             </div>
 
-            {/* Warning Footer */}
-            <div className="bg-slate-50 dark:bg-white/5 p-4 border-t border-solid border-slate-100 dark:border-zinc-800 flex items-start gap-3">
-              <Info className="text-slate-400 dark:text-zinc-500 mt-0.5" size={18} />
-              <p className="text-xs text-slate-500 dark:text-zinc-500 leading-relaxed">
-                <strong className="text-slate-700 dark:text-zinc-300">Disclaimer:</strong> Always follow the specific instructions issued by local emergency management authorities.
-              </p>
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-100 dark:border-zinc-800 flex justify-end gap-3 bg-gray-50 dark:bg-zinc-900/30 rounded-b-3xl">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="px-6 py-2 rounded-xl font-bold text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                form="disasterForm"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all"
+              >
+                <Save size={18} /> Save Changes
+              </button>
             </div>
+
           </div>
         </div>
-
-        {/* --- RIGHT SIDEBAR: QUICK REFS --- */}
-        <div className="xl:col-span-1 space-y-6">
-          
-          {/* First Aid Section */}
-          <div>
-            <h3 className="text-xs font-bold text-gray-400 dark:text-zinc-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <BriefcaseMedical size={14} /> Rapid First Aid
-            </h3>
-            <div className="space-y-3">
-              <FirstAidCard 
-                type="critical"
-                title="CPR (Adult)" 
-                steps={["Check response.", "Call 108.", "Push hard & fast in center of chest.", "30 compressions, 2 breaths."]} 
-              />
-              <FirstAidCard 
-                type="critical"
-                title="Severe Bleeding" 
-                steps={["Apply direct pressure.", "Do not remove cloth if soaked.", "Elevate injury above heart.", "Keep warm."]} 
-              />
-              <FirstAidCard 
-                type="standard"
-                title="Burns" 
-                steps={["Cool with water (10 mins).", "Remove jewelry.", "Cover with clean bag.", "No ice/creams."]} 
-              />
-            </div>
-          </div>
-
-          {/* SOS Module */}
-          <SOSGuide />
-          
-        </div>
-
-      </div>
+      )}
     </div>
   );
 }

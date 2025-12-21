@@ -1,160 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   ShieldCheck, Droplets, Flame, Zap, Wind, 
   BriefcaseMedical, AlertTriangle, 
   Info, ChevronRight, Waves, 
   MountainSnow, Skull, ThermometerSun, Volume2, 
-  Activity
+  Activity, ExternalLink, Loader
 } from "lucide-react";
 
-// --- SAFETY DATA ---
-const safetyData = {
-  flood: {
-    title: "Flood & Flash Floods",
-    icon: <Droplets />,
-    color: "blue",
-    phases: {
-      before: [
-        "Know the elevation of your property in relation to flood plains.",
-        "Install check valves in sewer traps to prevent floodwater backing up.",
-        "Seal walls in basements with waterproofing compounds.",
-        "Elevate the furnace, water heater, and electric panel."
-      ],
-      during: [
-        "Turn off utilities at the main switches or valves.",
-        "Disconnect electrical appliances (do not touch if you are wet).",
-        "Do not walk through moving water. Six inches is enough to knock you down.",
-        "If trapped in a building, move to the highest level (roof) and signal for help."
-      ],
-      after: [
-        "Listen for news reports to learn whether the community's water supply is safe.",
-        "Avoid floodwaters; water may be contaminated by oil, gasoline, or raw sewage.",
-        "Clean and disinfect everything that got wet.",
-        "Watch out for snakes and animals that may have entered your home."
-      ]
-    }
-  },
-  fire: {
-    title: "Structural Fire",
-    icon: <Flame />,
-    color: "orange",
-    phases: {
-      before: [
-        "Install smoke alarms on every level of your home.",
-        "Plan two ways out of every room.",
-        "Check electrical wiring and replace frayed cords immediately.",
-        "Keep a fire extinguisher in the kitchen and garage."
-      ],
-      during: [
-        "Crawl low under smoke. The cleanest air is 12 to 24 inches off the floor.",
-        "Test doors with the back of your hand before opening. If hot, use another exit.",
-        "If your clothes catch fire: Stop, Drop, and Roll.",
-        "Never use an elevator during a fire."
-      ],
-      after: [
-        "Do not enter the building until authorities say it is safe.",
-        "Check for structural damage to roofs and walls.",
-        "Discard food, beverages, and medicines exposed to heat or smoke."
-      ]
-    }
-  },
-  earthquake: {
-    title: "Earthquake",
-    icon: <Zap />,
-    color: "amber",
-    phases: {
-      before: [
-        "Secure heavy furniture (bookshelves, water heaters) to wall studs.",
-        "Practice 'Drop, Cover, and Hold On'.",
-        "Locate safe spots in each room (under sturdy tables).",
-        "Store breakable items in low, closed cabinets with latches."
-      ],
-      during: [
-        "If indoors: Drop to the ground, Cover your head, Hold on to shelter.",
-        "Stay away from glass, windows, outside doors, and walls.",
-        "If outdoors: Move to a clear area away from trees, signs, and buildings.",
-        "If driving: Pull over to a clear location and stop."
-      ],
-      after: [
-        "Expect aftershocks. Each time you feel one, drop, cover, and hold on.",
-        "Check for gas leaks. If you smell gas, turn off the main valve and leave.",
-        "Open cabinets cautiously. Beware of objects that can fall off shelves."
-      ]
-    }
-  },
-  cyclone: {
-    title: "Cyclone & Storms",
-    icon: <Wind />,
-    color: "teal",
-    phases: {
-      before: [
-        "Trim trees and shrubs around your home to make them more wind resistant.",
-        "Clear loose and clogged rain gutters and downspouts.",
-        "Bring in outdoor furniture, decorations, and garbage cans.",
-        "Board up windows or use storm shutters."
-      ],
-      during: [
-        "Stay indoors and away from windows and glass doors.",
-        "Close all interior doors—secure and brace external doors.",
-        "Lie on the floor under a table or another sturdy object.",
-        "Do not be fooled if the eye of the storm passes (winds will return)."
-      ],
-      after: [
-        "Stay out of damaged buildings.",
-        "Watch out for fallen power lines and report them.",
-        "Use battery-powered flashlights. Do not use candles (gas leak risk)."
-      ]
-    }
-  },
-  tsunami: {
-    title: "Tsunami",
-    icon: <Waves />,
-    color: "cyan",
-    phases: {
-      before: ["Map out evacuation routes to high ground (100ft above sea level).", "Listen for warning sirens."],
-      during: ["If you feel an earthquake near the coast, move to high ground immediately.", "Do not wait for an official warning.", "Never go to the beach to watch the waves."],
-      after: ["Stay away from coastal areas until officials say it is safe.", "Be aware of secondary waves which can be larger."]
-    }
-  },
-  landslide: {
-    title: "Landslide",
-    icon: <MountainSnow />,
-    color: "stone",
-    phases: {
-      before: ["Monitor drainage patterns on land.", "Plant ground cover on slopes."],
-      during: ["Listen for unusual sounds like trees cracking or boulders knocking.", "Move away from the path of the slide.", "Curl into a tight ball and protect your head."],
-      after: ["Stay away from the slide area (flooding may follow).", "Check for injured trapped persons without entering the slide area."]
-    }
-  },
-  chemical: {
-    title: "Chemical Leak",
-    icon: <Skull />,
-    color: "purple",
-    phases: {
-      before: ["Make an internal shelter kit (duct tape, plastic sheeting)."],
-      during: ["Close all windows, vents, and fireplace dampers.", "Turn off air conditioning.", "Go into an interior room and seal it (Shelter-in-place)."],
-      after: ["Open windows to ventilate once 'All Clear' is given.", "Shower and change clothes immediately."]
-    }
-  },
-  heatwave: {
-    title: "Extreme Heat",
-    icon: <ThermometerSun />,
-    color: "rose",
-    phases: {
-      before: ["Install window reflectors.", "Insulate water pipes."],
-      during: ["Stay indoors during the hottest part of the day.", "Drink plenty of water even if not thirsty.", "Wear light, loose-fitting clothing."],
-      after: ["Continue to hydrate.", "Check on elderly neighbors."]
-    }
-  }
+// --- ICON MAPPING ---
+const ICON_MAP = {
+  "Droplets": Droplets,
+  "Flame": Flame,
+  "Zap": Zap,
+  "Wind": Wind,
+  "Waves": Waves,
+  "MountainSnow": MountainSnow,
+  "Skull": Skull,
+  "ThermometerSun": ThermometerSun
 };
 
 // --- COMPONENT: FIRST AID CARD ---
 const FirstAidCard = ({ title, steps, type }) => (
   <div className={`
     p-5 rounded-2xl border-solid border shadow-sm transition-all group
-    /* Light Mode */
     bg-white border-gray-200
-    /* Dark Mode: Solid background to prevent bleed-through */
     dark:bg-[#0a0a0a] dark:border-zinc-800
   `}>
     <div className="flex items-center gap-3 mb-3">
@@ -182,9 +52,7 @@ const FirstAidCard = ({ title, steps, type }) => (
 const SOSGuide = () => (
   <div className={`
     rounded-2xl p-6 mt-6 border-solid border
-    /* Light Mode */
     bg-slate-900 text-white border-slate-800
-    /* Dark Mode */
     dark:bg-[#0a0a0a] dark:border-zinc-800
   `}>
     <div className="flex items-center gap-3 mb-4">
@@ -215,12 +83,90 @@ const SOSGuide = () => (
 
 // --- MAIN PAGE ---
 export default function SafetyInfoPage() {
-  const [selectedDisaster, setSelectedDisaster] = useState('flood');
+  const [disasters, setDisasters] = useState({});
+  const [firstAidList, setFirstAidList] = useState([]);
+  
+  const [selectedDisasterSlug, setSelectedDisasterSlug] = useState(''); 
   const [phase, setPhase] = useState('during'); 
+  
+  const [initialLoading, setInitialLoading] = useState(true);
+  
+  // Live Intel State
+  const [liveReports, setLiveReports] = useState([]);
+  const [intelLoading, setIntelLoading] = useState(false);
 
-  const activeData = safetyData[selectedDisaster];
+  // --- 1. FETCH INITIAL DATA FROM DJANGO API ---
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // --- FETCH DISASTERS ---
+        const disasterRes = await axios.get('http://127.0.0.1:8000/api/v1/safetyinfo/disasters/');
+        
+        const rawData = disasterRes.data;
+        const dataArray = Array.isArray(rawData) ? rawData : rawData.results || [];
+        
+        const formattedDisasters = {};
+        dataArray.forEach(item => {
+          formattedDisasters[item.slug] = item;
+        });
+        
+        setDisasters(formattedDisasters);
 
-  // Helper to get theme colors
+        if (dataArray.length > 0 && !selectedDisasterSlug) {
+            setSelectedDisasterSlug(dataArray[0].slug);
+        }
+
+        // --- FETCH FIRST AID ---
+        const firstAidRes = await axios.get('http://127.0.0.1:8000/api/v1/safetyinfo/first-aid/');
+        const firstAidRaw = firstAidRes.data;
+        const firstAidArray = Array.isArray(firstAidRaw) ? firstAidRaw : firstAidRaw.results || [];
+        
+        setFirstAidList(firstAidArray);
+
+      } catch (error) {
+        console.error("Failed to connect to Django API:", error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // --- 2. FETCH LIVE INTEL (RELIEFWEB) ---
+  const apiQueryMap = {
+    flood: "flood",
+    fire: "wild fire",
+    earthquake: "earthquake",
+    cyclone: "tropical cyclone",
+    tsunami: "tsunami",
+    landslide: "land slide",
+    chemical: "technological disaster",
+    heatwave: "heat wave"
+  };
+
+  useEffect(() => {
+    if (phase !== 'live') return;
+
+    const fetchReports = async () => {
+      setIntelLoading(true);
+      const query = apiQueryMap[selectedDisasterSlug] || selectedDisasterSlug;
+      const url = `https://api.reliefweb.int/v1/reports?appname=rw-docs&query[value]=${query}&limit=5&sort[]=date:desc`;
+
+      try {
+        const response = await axios.get(url);
+        setLiveReports(response.data.data || []);
+      } catch (error) {
+        console.error("Failed to fetch live intel", error);
+      } finally {
+        setIntelLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, [selectedDisasterSlug, phase]);
+
+
   const getColorClasses = (color) => {
     const configs = {
       blue:   { bg: 'bg-blue-50 dark:bg-blue-900/10', text: 'text-blue-700 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-900/30', accent: 'bg-blue-600 dark:bg-blue-500' },
@@ -235,10 +181,19 @@ export default function SafetyInfoPage() {
     return configs[color] || configs.blue;
   };
 
-  const colors = getColorClasses(activeData.color);
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-[#050505] flex items-center justify-center text-gray-500 gap-2">
+        <Loader className="animate-spin" /> Loading Protocols...
+      </div>
+    );
+  }
+
+  const activeData = disasters[selectedDisasterSlug];
+  const ActiveIcon = ICON_MAP[activeData?.icon_name] || Activity; 
+  const colors = getColorClasses(activeData?.color_theme || 'blue');
 
   return (
-    // Explicit solid background to prevent artifacts
     <div className="min-h-screen bg-gray-50 dark:bg-[#050505] p-4 md:p-8 font-sans transition-colors duration-300">
       
       {/* HEADER */}
@@ -247,7 +202,7 @@ export default function SafetyInfoPage() {
           <ShieldCheck className="text-emerald-600 dark:text-emerald-500" size={36} />
           Civil Defense Manual
         </h1>
-        <p className="text-gray-500 dark:text-zinc-500">Comprehensive disaster protocols and life-saving techniques.</p>
+        <p className="text-gray-500 dark:text-zinc-500">Comprehensive disaster protocols and real-time intelligence.</p>
       </div>
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-4 gap-8">
@@ -255,95 +210,175 @@ export default function SafetyInfoPage() {
         {/* --- LEFT SIDEBAR: NAVIGATION --- */}
         <div className="xl:col-span-1 space-y-2 h-fit overflow-y-auto max-h-[500px] xl:max-h-none custom-scrollbar">
           <h3 className="text-xs font-bold text-gray-400 dark:text-zinc-600 uppercase tracking-widest mb-3 px-2">Disaster Scenarios</h3>
-          {Object.keys(safetyData).map((key) => (
-            <button
-              key={key}
-              onClick={() => setSelectedDisaster(key)}
-              className={`
-                w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-bold border border-transparent
-                ${selectedDisaster === key 
-                  ? 'bg-white shadow-md text-gray-900 border-gray-200 dark:bg-[#0a0a0a] dark:text-white dark:border-zinc-800' 
-                  : 'text-gray-500 hover:bg-white/60 hover:text-gray-700 dark:text-zinc-500 dark:hover:bg-white/5 dark:hover:text-zinc-300'}
-              `}
-            >
-              <div className={`p-2 rounded-lg ${selectedDisaster === key ? 'bg-gray-100 dark:bg-white/10' : 'bg-transparent'}`}>
-                {React.cloneElement(safetyData[key].icon, { size: 18 })}
-              </div>
-              {safetyData[key].title}
-              {selectedDisaster === key && <ChevronRight className="ml-auto text-gray-400 dark:text-zinc-600" size={16} />}
-            </button>
-          ))}
+          {Object.keys(disasters).map((slug) => {
+            const item = disasters[slug];
+            const ItemIcon = ICON_MAP[item.icon_name] || Activity;
+            
+            return (
+              <button
+                key={slug}
+                onClick={() => setSelectedDisasterSlug(slug)}
+                className={`
+                  w-full flex items-center gap-3 p-3 rounded-xl transition-all text-sm font-bold border border-transparent
+                  ${selectedDisasterSlug === slug 
+                    ? 'bg-white shadow-md text-gray-900 border-gray-200 dark:bg-[#0a0a0a] dark:text-white dark:border-zinc-800' 
+                    : 'text-gray-500 hover:bg-white/60 hover:text-gray-700 dark:text-zinc-500 dark:hover:bg-white/5 dark:hover:text-zinc-300'}
+                `}
+              >
+                <div className={`p-2 rounded-lg ${selectedDisasterSlug === slug ? 'bg-gray-100 dark:bg-white/10' : 'bg-transparent'}`}>
+                  <ItemIcon size={18} />
+                </div>
+                {item.title}
+                {selectedDisasterSlug === slug && <ChevronRight className="ml-auto text-gray-400 dark:text-zinc-600" size={16} />}
+              </button>
+            );
+          })}
         </div>
 
         {/* --- CENTER: MAIN CONTENT --- */}
         <div className="xl:col-span-2">
-          <div className="bg-white dark:bg-[#0a0a0a] rounded-3xl border border-solid border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden min-h-[600px] flex flex-col transition-colors duration-300">
-            
-            {/* Hero Section of Card */}
-            <div className={`p-8 border-b border-solid transition-colors duration-300 ${colors.bg} ${colors.border}`}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className={`p-4 rounded-2xl shadow-sm bg-white dark:bg-[#0a0a0a] ${colors.text}`}>
-                  {React.cloneElement(activeData.icon, { size: 40 })}
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{activeData.title}</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-white/60 dark:bg-white/10 ${colors.text}`}>OFFICIAL PROTOCOL</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Phase Tabs */}
-              <div className="flex p-1 bg-white/60 dark:bg-black/20 backdrop-blur-sm rounded-xl border border-solid border-white/50 dark:border-white/5">
-                {['before', 'during', 'after'].map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPhase(p)}
-                    className={`
-                      flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all
-                      ${phase === p 
-                        ? 'bg-white shadow-sm text-gray-900 dark:bg-[#1a1a1a] dark:text-white' 
-                        : 'text-gray-500 hover:text-gray-700 dark:text-zinc-500 dark:hover:text-zinc-300'}
-                    `}
-                  >
-                    {p} Event
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Action List */}
-            <div className="p-8 flex-1">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2 capitalize">
-                <div className={`w-2 h-2 rounded-full ${colors.accent}`}></div>
-                Actions: {phase} the event
-              </h3>
+          {activeData && (
+            <div className="bg-white dark:bg-[#0a0a0a] rounded-3xl border border-solid border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden min-h-[600px] flex flex-col transition-colors duration-300">
               
-              <div className="space-y-4">
-                {activeData.phases[phase].map((item, index) => (
-                  <div key={index} className="flex gap-4 group">
-                    <div className={`
-                      mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white shadow-sm transition-transform group-hover:scale-110
-                      ${colors.accent}
-                    `}>
-                      {index + 1}
-                    </div>
-                    <div className="pt-1.5 pb-4 border-b border-solid border-gray-100 dark:border-zinc-800 w-full">
-                      <p className="text-gray-700 dark:text-zinc-300 leading-relaxed font-medium">{item}</p>
+              {/* Hero Section of Card */}
+              <div className={`p-8 border-b border-solid transition-colors duration-300 ${colors.bg} ${colors.border}`}>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className={`p-4 rounded-2xl shadow-sm bg-white dark:bg-[#0a0a0a] ${colors.text}`}>
+                    <ActiveIcon size={40} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{activeData.title}</h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-white/60 dark:bg-white/10 ${colors.text}`}>OFFICIAL PROTOCOL</span>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Phase Tabs */}
+                <div className="flex p-1 bg-white/60 dark:bg-black/20 backdrop-blur-sm rounded-xl border border-solid border-white/50 dark:border-white/5">
+                  {['before', 'during', 'after'].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPhase(p)}
+                      className={`
+                        flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all
+                        ${phase === p 
+                          ? 'bg-white shadow-sm text-gray-900 dark:bg-[#1a1a1a] dark:text-white' 
+                          : 'text-gray-500 hover:text-gray-700 dark:text-zinc-500 dark:hover:text-zinc-300'}
+                      `}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  {/* Live Intel Tab */}
+                  <button
+                      onClick={() => setPhase('live')}
+                      className={`
+                        flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1
+                        ${phase === 'live' 
+                          ? 'bg-red-500 shadow-sm text-white' 
+                          : 'text-red-500/70 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'}
+                      `}
+                    >
+                     <Activity size={12} /> LIVE
+                    </button>
+                </div>
+              </div>
+
+              {/* Content Area */}
+              <div className="p-8 flex-1">
+                
+                {/* CONDITION: If Live Tab is selected */}
+                {phase === 'live' ? (
+                  <div className="animate-in fade-in duration-500">
+                      <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                             <Activity className="text-red-500" size={20} />
+                             Real-Time Global Reports
+                          </h3>
+                          <span className="text-xs font-medium px-2 py-1 bg-gray-100 dark:bg-white/5 rounded text-gray-500">Source: ReliefWeb API</span>
+                      </div>
+
+                      {intelLoading ? (
+                           <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-3">
+                              <Loader className="animate-spin" size={32} />
+                              <p className="text-sm font-medium">Scanning global networks...</p>
+                           </div>
+                      ) : (
+                          <div className="space-y-3">
+                              {liveReports.length > 0 ? (
+                                  liveReports.map((report) => (
+                                      <a 
+                                          key={report.id}
+                                          href={report.href}
+                                          target="_blank" 
+                                          rel="noreferrer"
+                                          className="group block p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-900/10 border border-gray-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-800 transition-all"
+                                      >
+                                          <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 mb-2 line-clamp-2">
+                                              {report.fields?.title || report.title}
+                                          </h4>
+                                          <div className="flex items-center justify-between">
+                                              <span className="text-[10px] uppercase font-bold text-gray-400 bg-white dark:bg-black/40 px-2 py-1 rounded border border-gray-100 dark:border-white/5">
+                                                  Situation Report
+                                              </span>
+                                              <ExternalLink size={14} className="text-gray-400 group-hover:text-blue-500" />
+                                          </div>
+                                      </a>
+                                  ))
+                              ) : (
+                                  <div className="text-center py-12 text-gray-400 text-sm">
+                                      No immediate critical reports found for this category.
+                                  </div>
+                              )}
+                          </div>
+                      )}
+                  </div>
+                ) : (
+                  // CONDITION: Standard Static Phases (Before, During, After)
+                  <>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2 capitalize">
+                      <div className={`w-2 h-2 rounded-full ${colors.accent}`}></div>
+                      Actions: {phase} the event
+                    </h3>
+                    
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      {/* --- FIX: OPTIONAL CHAINING --- */}
+                      {/* Check if activeData.phases exists AND if the specific phase exists */}
+                      {activeData?.phases?.[phase] && activeData.phases[phase].length > 0 ? (
+                        activeData.phases[phase].map((item, index) => (
+                          <div key={index} className="flex gap-4 group">
+                            <div className={`
+                              mt-1 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white shadow-sm transition-transform group-hover:scale-110
+                              ${colors.accent}
+                            `}>
+                              {index + 1}
+                            </div>
+                            <div className="pt-1.5 pb-4 border-b border-solid border-gray-100 dark:border-zinc-800 w-full">
+                              <p className="text-gray-700 dark:text-zinc-300 leading-relaxed font-medium">{item}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-32 text-gray-400 italic gap-2 border-2 border-dashed border-gray-100 dark:border-zinc-800 rounded-xl">
+                            <Info size={20} />
+                            <p>No protocols found for this phase.</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Warning Footer */}
+              <div className="bg-slate-50 dark:bg-white/5 p-4 border-t border-solid border-slate-100 dark:border-zinc-800 flex items-start gap-3">
+                <Info className="text-slate-400 dark:text-zinc-500 mt-0.5" size={18} />
+                <p className="text-xs text-slate-500 dark:text-zinc-500 leading-relaxed">
+                  <strong className="text-slate-700 dark:text-zinc-300">Disclaimer:</strong> Always follow the specific instructions issued by local emergency management authorities.
+                </p>
               </div>
             </div>
-
-            {/* Warning Footer */}
-            <div className="bg-slate-50 dark:bg-white/5 p-4 border-t border-solid border-slate-100 dark:border-zinc-800 flex items-start gap-3">
-              <Info className="text-slate-400 dark:text-zinc-500 mt-0.5" size={18} />
-              <p className="text-xs text-slate-500 dark:text-zinc-500 leading-relaxed">
-                <strong className="text-slate-700 dark:text-zinc-300">Disclaimer:</strong> Always follow the specific instructions issued by local emergency management authorities.
-              </p>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* --- RIGHT SIDEBAR: QUICK REFS --- */}
@@ -355,21 +390,14 @@ export default function SafetyInfoPage() {
               <BriefcaseMedical size={14} /> Rapid First Aid
             </h3>
             <div className="space-y-3">
-              <FirstAidCard 
-                type="critical"
-                title="CPR (Adult)" 
-                steps={["Check response.", "Call 108.", "Push hard & fast in center of chest.", "30 compressions, 2 breaths."]} 
-              />
-              <FirstAidCard 
-                type="critical"
-                title="Severe Bleeding" 
-                steps={["Apply direct pressure.", "Do not remove cloth if soaked.", "Elevate injury above heart.", "Keep warm."]} 
-              />
-              <FirstAidCard 
-                type="standard"
-                title="Burns" 
-                steps={["Cool with water (10 mins).", "Remove jewelry.", "Cover with clean bag.", "No ice/creams."]} 
-              />
+              {firstAidList.map((guide) => (
+                <FirstAidCard 
+                  key={guide.id}
+                  type={guide.guide_type}
+                  title={guide.title} 
+                  steps={guide.steps} 
+                />
+              ))}
             </div>
           </div>
 
