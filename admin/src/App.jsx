@@ -17,7 +17,8 @@ import LocalSupportNetwork from "./pages/LocalSupportNetwork";
 import ResourceRequests from "./pages/ResourceRequests";
 import ContactsPage from "./pages/ContactsPage";
 import SafetyInfoPage from "./pages/SafetyInfoPage";
-import RescueView from "./pages/RescueView";
+import RescueView from "../../frontend/src/pages/RescueView";
+import NotificationAdmin from "./pages/NotificationAdmin";
 export default function App() {
   return (
     <Routes>
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/alerts" element={<AlertsView />} />
         <Route path="/sos" element={<SOSView />} />
         <Route path="/rescue-channels" element={<RescueView />} />
+        <Route path="/settings-notifications" element={<NotificationAdmin />} />
         <Route path="/map-navigation" element={<PlaceholderView title="Live Map Navigation" icon={MapIcon} />} />
         {/* <Route path="/donate" element={<PlaceholderView title="Donation Center" icon={Heart} />} /> */}
         {/* <Route path="/safety-info" element={<PlaceholderView title="Safety Guidelines" icon={Shield} />} /> */}

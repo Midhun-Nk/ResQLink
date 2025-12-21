@@ -2,23 +2,19 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Video, Mic, Activity, ShieldAlert, Stethoscope, 
-  Flame, Radio, Signal, Plus, Map, Loader, AlertCircle, LogOut
+  Flame, Radio, Signal, Map, Loader, AlertCircle
 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
 // --- CONSTANTS ---
-// In a real app, get this from your Auth Context/Session
+// In a real app, replace '1' with the actual logged-in User ID from your Auth Context
 const CURRENT_USER_ID = 1; 
 const API_URL = 'http://127.0.0.1:8000/api/v1/rescue-channels/';
 
 // --- THE CARD COMPONENT ---
-const ConferenceChannelCard = ({ channel, onToggleJoin }) => {
-  const navigate = useNavigate();
+const ConferenceChannelCard = ({ channel, onJoinSession }) => {
   
-  // Check if our simulated user is in the participants list
-  // (Assuming backend generates avatar URL based on ID: https://i.pravatar.cc/150?u=1)
-  const isJoined = channel.participants.some(url => url.includes(`u=${CURRENT_USER_ID}`));
-
+  // Theme Logic based on sector
   const getSectorTheme = (sector) => {
     switch(sector) {
       case 'Medical': return { 
@@ -97,7 +93,7 @@ const ConferenceChannelCard = ({ channel, onToggleJoin }) => {
           </p>
         </div>
 
-        {/* Participants Strip (Dynamic) */}
+        {/* Participants Strip */}
         <div className="mt-auto mb-5">
           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#111] rounded-xl border border-gray-100 dark:border-white/5">
              <div className="flex items-center -space-x-2">
@@ -119,42 +115,35 @@ const ConferenceChannelCard = ({ channel, onToggleJoin }) => {
 
         {/* Actions */}
         <div className="grid grid-cols-2 gap-3 mt-auto">
-          {/* Audio Listen (Placeholder) */}
+          {/* Listen Button: Just marks presence (Audio Mode) */}
           <button 
+            onClick={() => onJoinSession(channel.id, false)}
             className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-zinc-400 font-bold text-xs uppercase tracking-wider hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
           >
             <Mic size={16} /> Listen
           </button>
 
-          {/* Join / Leave Logic */}
-          {isJoined ? (
-            <button 
-              onClick={() => onToggleJoin(channel.id)}
-              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400 font-bold text-xs uppercase tracking-wider transition-all"
-            >
-              <LogOut size={16} /> Leave
-            </button>
-          ) : (
-            <button 
-              onClick={() => onToggleJoin(channel.id)}
-              className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider shadow-md transition-transform active:scale-95 ${theme.btn}`}
-            >
-              <Video size={16} /> Join
-            </button>
-          )}
+          {/* Join Button: Marks presence AND Navigates to Video Conference */}
+          <button 
+            onClick={() => onJoinSession(channel.id, true)} 
+            className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider shadow-md transition-transform active:scale-95 ${theme.btn}`}
+          >
+            <Video size={16} /> Join
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-// --- MAIN DASHBOARD COMPONENT ---
+// --- MAIN CLIENT VIEW ---
 export default function RescueView() {
+  const navigate = useNavigate();
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Initial Fetch
+  // Initial Data Fetch
   useEffect(() => {
     const fetchChannels = async () => {
       try {
@@ -172,32 +161,32 @@ export default function RescueView() {
     fetchChannels();
   }, []);
 
-  // --- HANDLE JOIN / LEAVE ---
-  const handleToggleJoin = async (channelId) => {
+  // --- HANDLE JOIN & NAVIGATION ---
+  const handleJoinSession = async (channelId, isVideo = true) => {
     try {
-      // 1. Optimistic UI Update (optional, but makes it feel faster)
-      // For now, we wait for server response to ensure accuracy of the participant list
-
-      // 2. Call API
+      // 1. Call API to add user to "Active Participants" list in DB
       const response = await axios.post(`${API_URL}${channelId}/join_leave/`, {
         user_id: CURRENT_USER_ID 
       });
 
       const { status, totalParticipants, participants } = response.data;
 
-      // 3. Update State with new data from server
+      // 2. Update Local State (to show new count immediately)
       setChannels(prevChannels => prevChannels.map(ch => 
         ch.id === channelId 
-          ? { ...ch, totalParticipants, participants } // Update specific channel
+          ? { ...ch, totalParticipants, participants } // Update count and avatar list
           : ch
       ));
 
-      // Optional: Browser Alert or Toast
-      // alert(`Successfully ${status} the channel.`);
+      // 3. IF Video Mode was selected, Navigate to Zego Page
+      if (isVideo) {
+        navigate(`/conference/${channelId}`);
+      }
 
     } catch (err) {
-      console.error("Join/Leave failed", err);
-      alert("Failed to update participation status.");
+      console.error("Join failed", err);
+      // Fallback: If API fails, try to navigate anyway so user isn't blocked
+      if (isVideo) navigate(`/conference/${channelId}`);
     }
   };
 
@@ -222,7 +211,7 @@ export default function RescueView() {
   return (
     <div className="animate-in fade-in duration-500 min-h-screen bg-gray-50 dark:bg-[#050505] p-6">
       
-      {/* Header Section */}
+      {/* Header Section (Client View) */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div className="flex items-center gap-3">
            <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
@@ -238,9 +227,6 @@ export default function RescueView() {
            <button className="flex-1 md:flex-none px-4 py-2.5 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
               <Map size={16} /> View Map
            </button>
-           <button className="flex-1 md:flex-none px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-800 dark:hover:bg-zinc-200 transition-colors shadow-sm flex items-center justify-center gap-2">
-              <Plus size={16} /> New Channel
-           </button>
         </div>
       </div>
 
@@ -251,7 +237,7 @@ export default function RescueView() {
             <ConferenceChannelCard 
               key={channel.id} 
               channel={channel} 
-              onToggleJoin={handleToggleJoin} // Pass the handler
+              onJoinSession={handleJoinSession} 
             />
           ))}
         </div>
@@ -259,7 +245,7 @@ export default function RescueView() {
         <div className="flex flex-col items-center justify-center py-20 text-gray-400 border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-3xl">
           <Radio size={48} className="mb-4 opacity-20" />
           <p className="font-bold">No Active Channels</p>
-          <p className="text-sm">Start a new channel to begin coordination.</p>
+          <p className="text-sm">Rescue operations are currently offline.</p>
         </div>
       )}
     </div>

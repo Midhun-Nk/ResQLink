@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'corsheaders',  # Add this
     'rest_framework',
     'support',
-    'rescue'
+    'rescue',
+    'notification'
 
 ]
 

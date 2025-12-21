@@ -4,7 +4,6 @@ import { DashboardView } from "./pages/DashboardView";
 import Conference from "./pages/Conference";
 import { AlertsView } from "./pages/AlertsView";
 import { SOSView } from "./pages/SOSView";
-import { RescueView } from "./pages/RescueView";
 import { PlaceholderView } from "./pages/PlaceholderView";
 
 import { Map as MapIcon, Heart, Shield, FileText, Phone } from "lucide-react";
@@ -18,6 +17,7 @@ import LocalSupportNetwork from "./pages/LocalSupportNetwork";
 import ResourceRequests from "./pages/ResourceRequests";
 import ContactsPage from "./pages/ContactsPage";
 import SafetyInfoPage from "./pages/SafetyInfoPage";
+import RescueView from "./pages/RescueView";
 export default function App() {
   return (
     <Routes>
