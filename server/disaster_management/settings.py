@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'support',
     'rescue',
-    'notification'
+    'notification',
+    'navigation',
 
 ]
 
