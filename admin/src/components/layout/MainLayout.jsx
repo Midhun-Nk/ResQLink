@@ -11,6 +11,7 @@ import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { SidebarItem } from '../SidebarItem';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
+import NotificationBell from '../NotificationBell';
 
 export default function MainLayout() {
 
@@ -277,7 +278,7 @@ export default function MainLayout() {
             </button>
 
             {/* Notifications */}
-            <div className="relative">
+            {/* <div className="relative">
               <button className={`
                 p-2.5 rounded-full transition-colors
                 bg-red-50 text-red-600 hover:bg-red-100
@@ -289,7 +290,8 @@ export default function MainLayout() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white dark:border-[#050505]"></span>
               </span>
-            </div>
+            </div> */}
+            <NotificationBell />
 
             {/* Profile (Header) */}
             <div className="flex items-center pl-4 border-l border-solid border-gray-200 dark:border-zinc-900">

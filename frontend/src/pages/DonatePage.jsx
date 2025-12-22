@@ -1,47 +1,137 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 import { 
-  Heart, ShieldCheck, Activity, Users, CreditCard, ArrowRight, TrendingUp 
+  Heart, ShieldCheck, Activity, Users, CreditCard, ArrowRight, TrendingUp, Loader 
 } from 'lucide-react';
 
-// --- Mock Data ---
-const donationData = [
-  { name: 'Day 1', amount: 4000 },
-  { name: 'Day 2', amount: 12000 },
-  { name: 'Day 3', amount: 8000 },
-  { name: 'Day 4', amount: 25000 },
-  { name: 'Day 5', amount: 18000 },
-  { name: 'Day 6', amount: 45000 },
-  { name: 'Today', amount: 52000 },
-];
+// Configure your API Base URL
+const API_BASE = 'http://localhost:5000/api/v1/donations'; 
+const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID; // Replace with your actual Test Key ID
 
 const DonatePage = () => {
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
-  const stats = {
-    totalRaised: 164500,
-    goal: 500000,
-    donors: 1240,
-    daysLeft: 14
+  // Dynamic State for Dashboard
+  const [stats, setStats] = useState({
+    totalRaised: 0,
+    donors: 0,
+    chartData: [],
+    recentDonations: []
+  });
+
+  const GOAL = 500000; // Static Campaign Goal
+
+  // --- 1. Fetch Data on Component Mount ---
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/stats`);
+      
+      // Transform chart data if necessary or use defaults if empty
+      const chartData = res.data.chartData.length > 0 
+        ? res.data.chartData 
+        : [{ name: 'Start', amount: 0 }];
+
+      setStats({
+        totalRaised: Number(res.data.totalRaised),
+        donors: Number(res.data.totalDonors),
+        chartData: chartData,
+        recentDonations: res.data.recentDonations
+      });
+    } catch (err) {
+      console.error("Failed to load stats", err);
+    } finally {
+      setIsPageLoading(false);
+    }
   };
 
-  const progressPercentage = (stats.totalRaised / stats.goal) * 100;
-
+  // --- 2. Handle Donation Payment Flow ---
   const handleDonation = async () => {
     if (!amount || amount <= 0) {
       alert("Please enter a valid amount");
       return;
     }
+    
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-        alert("Redirecting to Payment Gateway...");
-        setIsLoading(false);
-    }, 1500);
+
+    try {
+      // Step A: Create Order on Backend
+      const orderUrl = `${API_BASE}/create-order`;
+      const { data } = await axios.post(orderUrl, { 
+        amount: amount,
+        donorName: "Supporter" // You could add a name input field later
+      });
+
+      // Step B: Configure Razorpay Options
+      const options = {
+        key: RAZORPAY_KEY_ID,
+        amount: data.amount, // Amount is in paise
+        currency: "INR",
+        name: "Disaster Recovery Fund",
+        description: "Donation for Relief Operations",
+        image: "https://cdn-icons-png.flaticon.com/512/4577/4577278.png", // Optional Logo
+        order_id: data.id, // Order ID from backend
+        
+        // Step C: Handle Success
+        handler: async function (response) {
+          try {
+            // Verify Payment on Backend
+            await axios.post(`${API_BASE}/verify-payment`, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+
+            alert("Payment Successful! Thank you for your support.");
+            setAmount('');
+            fetchStats(); // Refresh dashboard to show new total
+          } catch (err) {
+            console.error(err);
+            alert("Payment Verification Failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: "Anonymous Donor",
+          email: "donor@example.com",
+          contact: "9999999999"
+        },
+        theme: {
+          color: "#10b981", // Emerald Green
+        },
+      };
+
+      // Step D: Open Razorpay
+      const rzp1 = new window.Razorpay(options);
+      rzp1.on('payment.failed', function (response){
+        alert(`Payment Failed: ${response.error.description}`);
+      });
+      rzp1.open();
+      
+    } catch (err) {
+      console.error("Payment initiation failed", err);
+      alert("Could not initiate payment. Check server connection.");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const progressPercentage = Math.min((stats.totalRaised / GOAL) * 100, 100);
+
+  if (isPageLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#050505] text-slate-500">
+        <Loader className="animate-spin mr-2" /> Loading Campaign Data...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#050505] text-slate-800 dark:text-gray-200 font-sans p-6 md:p-12 transition-colors duration-300">
@@ -86,7 +176,7 @@ const DonatePage = () => {
               <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">₹{stats.totalRaised.toLocaleString()}</h3>
               <div className="flex items-center gap-1 text-emerald-500 text-xs mt-2 font-bold">
                 <TrendingUp size={14} />
-                <span>+12% vs yesterday</span>
+                <span>Live Data</span>
               </div>
             </div>
             <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-white/10">
@@ -99,8 +189,8 @@ const DonatePage = () => {
             </div>
             <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-white/10">
               <p className="text-slate-500 dark:text-zinc-500 text-xs font-bold uppercase tracking-wider mb-1">Funding Goal</p>
-              <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">₹{stats.goal.toLocaleString()}</h3>
-              <p className="text-slate-400 dark:text-zinc-600 text-xs mt-2 font-medium">{stats.daysLeft} days remaining</p>
+              <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">₹{(GOAL/1000).toFixed(0)}k</h3>
+              <p className="text-slate-400 dark:text-zinc-600 text-xs mt-2 font-medium">14 days remaining</p>
             </div>
           </div>
 
@@ -108,14 +198,13 @@ const DonatePage = () => {
           <div className="bg-white dark:bg-[#0a0a0a] p-6 rounded-2xl shadow-lg shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-white/10">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-lg text-slate-800 dark:text-white">Fund Flow Analytics</h3>
-              <select className="bg-slate-50 dark:bg-white/5 border-none text-sm text-slate-600 dark:text-zinc-400 rounded-lg p-2 cursor-pointer focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
-                <option>Last 7 Days</option>
-                <option>Last 30 Days</option>
-              </select>
+              <div className="text-xs text-slate-500 font-bold bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-full">
+                Last 7 Days
+              </div>
             </div>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={donationData}>
+                <AreaChart data={stats.chartData}>
                   <defs>
                     <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
@@ -128,6 +217,7 @@ const DonatePage = () => {
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#18181b', borderRadius: '12px', border: '1px solid #27272a', color: '#fff' }}
                     itemStyle={{ color: '#34d399', fontWeight: 'bold' }}
+                    formatter={(value) => [`₹${value}`, 'Amount']}
                   />
                   <Area type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorAmt)" />
                 </AreaChart>
@@ -151,7 +241,7 @@ const DonatePage = () => {
             <div className="mb-8">
               <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-2">
                 <span className="text-emerald-700 dark:text-emerald-400">{progressPercentage.toFixed(1)}% Funded</span>
-                <span className="text-slate-400 dark:text-zinc-600">Goal: ₹{(stats.goal/1000)}k</span>
+                <span className="text-slate-400 dark:text-zinc-600">Goal: ₹{(GOAL/1000).toFixed(0)}k</span>
               </div>
               <div className="w-full bg-slate-100 dark:bg-white/10 rounded-full h-3 overflow-hidden">
                 <div 
@@ -191,9 +281,13 @@ const DonatePage = () => {
               <button 
                 onClick={handleDonation}
                 disabled={isLoading}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-4"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition-all active:scale-[0.98] mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Processing...' : (
+                {isLoading ? (
+                  <>
+                    <Loader className="animate-spin" size={20} /> Processing...
+                  </>
+                ) : (
                   <>
                     <CreditCard size={20} />
                     DONATE NOW
@@ -224,18 +318,21 @@ const DonatePage = () => {
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-           {/* Mock Recent Donors */}
-           {[1, 2, 3, 4].map((i) => (
-             <div key={i} className="flex items-center gap-3 p-4 bg-white dark:bg-[#0a0a0a] rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-colors">
-                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-xs">
-                  {['JD', 'AS', 'MK', 'RL'][i-1]}
-                </div>
-                <div>
-                   <p className="text-sm font-bold text-slate-800 dark:text-white">Anonymous</p>
-                   <p className="text-xs text-slate-500 dark:text-zinc-500 font-mono">Donated ₹{500 * i}</p>
-                </div>
-             </div>
-           ))}
+           {stats.recentDonations && stats.recentDonations.length > 0 ? (
+             stats.recentDonations.map((donor, i) => (
+               <div key={i} className="flex items-center gap-3 p-4 bg-white dark:bg-[#0a0a0a] rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-colors">
+                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                    {donor.donorName ? donor.donorName.substring(0, 2).toUpperCase() : 'AN'}
+                  </div>
+                  <div>
+                     <p className="text-sm font-bold text-slate-800 dark:text-white">{donor.donorName || 'Anonymous'}</p>
+                     <p className="text-xs text-slate-500 dark:text-zinc-500 font-mono">Donated ₹{Number(donor.amount).toLocaleString()}</p>
+                  </div>
+               </div>
+             ))
+           ) : (
+             <div className="col-span-full text-center text-slate-400 py-4">No recent donations. Be the first!</div>
+           )}
         </div>
       </div>
 

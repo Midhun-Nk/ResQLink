@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes.js';
 import dbConfig from './config/dbConfig.js';
+import dontaionRoute from './routes/dontaions.js';
 import http from 'http';
 import { Server } from 'socket.io';
 
@@ -66,6 +67,7 @@ io.on("connection", (socket) => {
   });
 });
 app.use('/api/v1/auth', userRoutes);
+app.use('/api/v1/donations', dontaionRoute)
 
 app.get('/', (req, res) => {
   res.send('API is running...');

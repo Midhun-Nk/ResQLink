@@ -21,6 +21,10 @@ admin/.env
 admin/.env.local
 admin/env
 frontend/.env.*.local
+server/.env
+server/.env.local
+server/env
+
 
 node_modules
 frontend/node_modules
