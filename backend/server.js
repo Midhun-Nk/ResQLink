@@ -3,6 +3,9 @@ import cors from 'cors';
 import userRoutes from './routes/userRoutes.js';
 import dbConfig from './config/dbConfig.js';
 import dontaionRoute from './routes/dontaions.js';
+import supportRoutes from './routes/supportRoutes.js';
+import requestRoutes from './routes/requestRoutes.js';
+import resourceRoutes from './routes/resourceRoutes.js';
 import http from 'http';
 import { Server } from 'socket.io';
 
@@ -68,7 +71,9 @@ io.on("connection", (socket) => {
 });
 app.use('/api/v1/auth', userRoutes);
 app.use('/api/v1/donations', dontaionRoute)
-
+app.use('/api/v1/support-groups', supportRoutes);
+app.use('/api/v1/help-requests', requestRoutes); // <--- NEW ROUTE
+app.use('/api/resources', resourceRoutes); // <--- Register new route
 app.get('/', (req, res) => {
   res.send('API is running...');
 });

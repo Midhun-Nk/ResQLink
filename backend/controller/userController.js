@@ -122,3 +122,59 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+
+// 1. Get All Users
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: { exclude: ['password'] }, // Never send passwords back
+      order: [['createdAt', 'DESC']]
+    });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: 'Fetch failed' });
+  }
+};
+
+// 2. Create User (Admin Action)
+export const createUser = async (req, res) => {
+  try {
+    const newUser = await User.create(req.body);
+    // Remove password from response
+    const { password, ...userData } = newUser.toJSON();
+    res.status(201).json(userData);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message || 'Creation failed' });
+  }
+};
+
+// 3. Update User
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [updated] = await User.update(req.body, { where: { id } });
+    
+    if (updated) {
+      const updatedUser = await User.findByPk(id, { attributes: { exclude: ['password'] } });
+      res.json(updatedUser);
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Update failed' });
+  }
+};
+
+// 4. Delete User
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await User.destroy({ where: { id } });
+    
+    if (deleted) res.json({ message: 'User deleted' });
+    else res.status(404).json({ error: 'User not found' });
+  } catch (err) {
+    res.status(500).json({ error: 'Delete failed' });
+  }
+};

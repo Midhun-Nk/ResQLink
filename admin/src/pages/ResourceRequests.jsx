@@ -1,252 +1,308 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
-  Package, Truck, MapPin, Clock, AlertCircle, 
-  CheckCircle, Filter, Search, Plus, Archive, ChevronRight, Activity 
+  LayoutDashboard, Trash2, Pencil, Package, AlertCircle, 
+  CheckCircle2, Search, X, Save, Clock, Truck, XCircle 
 } from 'lucide-react';
 
-// --- Mock Data ---
-const initialRequests = [
-  {
-    id: 1,
-    item: "Blankets & Bedsheets",
-    category: "Shelter",
-    location: "Govt High School Camp, Wayanad",
-    urgency: "Critical",
-    required: 500,
-    collected: 320,
-    deadline: "24 Hours",
-    description: "Urgent need for clean woolen blankets for elderly and children displaced by landslide."
-  },
-  {
-    id: 2,
-    item: "Drinking Water (20L Cans)",
-    category: "Food & Water",
-    location: "Community Hall, Nilambur",
-    urgency: "High",
-    required: 200,
-    collected: 45,
-    deadline: "Immediate",
-    description: "Clean drinking water supply cut off. Need sealed 20L cans."
-  },
-  {
-    id: 3,
-    item: "Paracetamol & Dettol",
-    category: "Medical",
-    location: "Primary Health Center, District 4",
-    urgency: "Normal",
-    required: 1000,
-    collected: 850,
-    deadline: "3 Days",
-    description: "Basic first aid kits and fever medication for flood victims."
-  },
-  {
-    id: 4,
-    item: "Rice Bags (10kg)",
-    category: "Food & Water",
-    location: "Relief Base 2, Aluva",
-    urgency: "High",
-    required: 50,
-    collected: 0,
-    deadline: "48 Hours",
-    description: "Matta rice needed for community kitchen serving 300 people."
-  }
-];
+const API_URL = 'http://localhost:5000/api/resources';
 
-const ResourceRequests = () => {
-  const [filter, setFilter] = useState('All');
+export default function ResourceRequests() {
+  const [activeTab, setActiveTab] = useState('requests'); // 'requests' or 'pledges'
+  const [requests, setRequests] = useState([]);
+  const [pledges, setPledges] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredRequests = initialRequests.filter(req => 
-    filter === 'All' || req.category === filter
+  // Edit Modal State
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [currentId, setCurrentId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  // --- 1. Fetch Data ---
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      if (activeTab === 'requests') {
+        const res = await axios.get(API_URL);
+        setRequests(res.data);
+      } else {
+        const res = await axios.get(`${API_URL}/contributions/pending`);
+        setPledges(res.data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [activeTab]);
+
+  // --- 2. Request Management (CRUD) ---
+  const handleDeleteRequest = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this request?")) return;
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      setRequests(prev => prev.filter(r => r.id !== id));
+    } catch (err) { alert("Delete failed"); }
+  };
+
+  const handleUpdateRequest = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API_URL}/${currentId}`, editForm);
+      alert("Updated successfully");
+      setIsEditOpen(false);
+      fetchData();
+    } catch (err) { alert("Update failed"); }
+  };
+
+  // --- 3. Pledge Management (Approve/Reject) ---
+  const handleApprovePledge = async (id) => {
+    try {
+      await axios.put(`${API_URL}/contributions/${id}/approve`);
+      alert("Contribution verified! Stock updated.");
+      fetchData();
+    } catch (err) { alert("Error approving"); }
+  };
+
+  const handleRejectPledge = async (id) => {
+    if (!window.confirm("Reject this pledge?")) return;
+    try {
+      await axios.put(`${API_URL}/contributions/${id}/reject`);
+      fetchData();
+    } catch (err) { alert("Error rejecting"); }
+  };
+
+  // --- Helper: Open Edit ---
+  const openEdit = (req) => {
+    setEditForm({ ...req });
+    setCurrentId(req.id);
+    setIsEditOpen(true);
+  };
+
+  // --- Helper: Status Badge ---
+  const getStatusBadge = (status) => {
+    const styles = {
+      'Active': 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400',
+      'Fulfilled': 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400',
+      'Expired': 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400'
+    };
+    return <span className={`px-2 py-1 rounded text-xs font-bold border ${styles[status]}`}>{status}</span>;
+  };
+
+  // Filter requests for search
+  const filteredRequests = requests.filter(r => 
+    r.item.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    r.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // Helper: Urgency Styles
-  const getUrgencyStyle = (level) => {
-    switch(level) {
-      case 'Critical': return 'bg-red-100 text-red-700 border-red-200 animate-pulse dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20';
-      case 'High': return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20';
-      default: return 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20';
-    }
-  };
-
-  // Helper: Category Icons
-  const getCategoryIcon = (cat) => {
-    switch(cat) {
-      case 'Medical': return <div className="p-2.5 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-xl"><Plus size={20} /></div>;
-      case 'Food & Water': return <div className="p-2.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 rounded-xl"><Archive size={20} /></div>;
-      default: return <div className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 rounded-xl"><Package size={20} /></div>;
-    }
-  };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#050505] text-slate-800 dark:text-gray-200 font-sans p-4 md:p-8 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#050505] text-slate-800 dark:text-gray-200 font-sans p-8 transition-colors duration-300">
+      
+      {/* Header */}
+      <div className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+          <LayoutDashboard className="text-blue-600" /> Resource Admin
+        </h1>
+        
+        {/* Tabs */}
+        <div className="flex bg-white dark:bg-[#111] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-sm">
+          <button 
+            onClick={() => setActiveTab('requests')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'requests' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-zinc-800'}`}
+          >
+            Manage Requests
+          </button>
+          <button 
+            onClick={() => setActiveTab('pledges')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'pledges' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-zinc-800'}`}
+          >
+            Verify Collections
+            {pledges.length > 0 && <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{pledges.length}</span>}
+          </button>
+        </div>
+      </div>
 
-      {/* --- Hero Section --- */}
-      <div className="max-w-7xl mx-auto mb-10">
-        <div className="bg-slate-900 dark:bg-[#0a0a0a] rounded-3xl p-8 md:p-12 text-white relative overflow-hidden shadow-xl dark:shadow-none border border-transparent dark:border-white/10">
-           {/* Abstract Background Element */}
-           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] pointer-events-none -translate-y-20 translate-x-20"></div>
-           
-           <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      {/* --- TAB 1: PENDING COLLECTIONS (The "Pledge" System) --- */}
+      {activeTab === 'pledges' && (
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 p-4 rounded-xl mb-6 flex items-start gap-3">
+             <AlertCircle className="text-blue-600 mt-0.5" size={20} />
              <div>
-               <div className="inline-flex items-center gap-2 bg-slate-800/50 dark:bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-sm text-blue-300 dark:text-blue-200 font-medium mb-4 border border-slate-700 dark:border-white/10">
-                 <Truck size={14} />
-                 <span>Logistics & Supply Chain</span>
-               </div>
-               <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight">Resource Requests</h1>
-               <p className="text-slate-400 dark:text-zinc-400 max-w-xl text-lg font-medium">
-                 Directly ship or drop off essential materials to relief camps. 
-                 Real-time inventory tracking prevents wastage.
+               <h3 className="font-bold text-blue-900 dark:text-blue-200">Pending Collections</h3>
+               <p className="text-sm text-blue-700 dark:text-blue-400">
+                 These users have pledged to send items. Verify receipt before clicking "Collect" to update inventory.
                </p>
              </div>
-             
-             <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2 active:scale-95">
-               <Plus size={20} />
-               Request Material
-             </button>
-           </div>
-        </div>
-      </div>
+          </div>
 
-      {/* --- Stats Row --- */}
-      <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-         {[
-           { label: 'Active Requests', val: '124', icon: AlertCircle, color: 'text-orange-500 bg-orange-50 dark:bg-orange-500/10' },
-           { label: 'Items Delivered', val: '8.5k', icon: CheckCircle, color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' },
-           { label: 'Camps Served', val: '12', icon: MapPin, color: 'text-blue-500 bg-blue-50 dark:bg-blue-500/10' },
-           { label: 'Transit Vehicles', val: '45', icon: Truck, color: 'text-purple-500 bg-purple-50 dark:bg-purple-500/10' },
-         ].map((stat, i) => (
-           <div key={i} className="bg-white dark:bg-[#0a0a0a] p-4 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm flex items-center gap-4">
-             <div className={`p-3 rounded-xl ${stat.color}`}>
-               <stat.icon size={24} />
-             </div>
-             <div>
-               <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{stat.val}</h4>
-               <p className="text-[10px] text-slate-500 dark:text-zinc-500 font-bold uppercase tracking-wider">{stat.label}</p>
-             </div>
-           </div>
-         ))}
-      </div>
-
-      {/* --- Filters --- */}
-      <div className="max-w-7xl mx-auto mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 sticky top-2 z-20 bg-slate-50/95 dark:bg-[#050505]/95 backdrop-blur-sm py-2">
-        <div className="flex gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 no-scrollbar">
-          {['All', 'Food & Water', 'Medical', 'Shelter', 'Clothing'].map(cat => (
-            <button
-              key={cat}
-              onClick={() => setFilter(cat)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all border
-                ${filter === cat 
-                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-black dark:border-white' 
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 dark:bg-[#0a0a0a] dark:text-zinc-400 dark:border-white/10 dark:hover:bg-white/5'}
-              `}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-        
-        <div className="relative w-full sm:w-72">
-           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" size={18} />
-           <input 
-             type="text"
-             placeholder="Search items or camps..."
-             className={`
-               w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium outline-none transition-all
-               bg-white border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
-               dark:bg-[#0a0a0a] dark:border-white/10 dark:text-white dark:placeholder:text-zinc-600 dark:focus:ring-white/10 dark:focus:border-white/30
-             `}
-           />
-        </div>
-      </div>
-
-      {/* --- Request Cards Grid --- */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredRequests.map((req) => {
-          const percentage = Math.min((req.collected / req.required) * 100, 100);
-          
-          return (
-            <div key={req.id} className="bg-white dark:bg-[#0a0a0a] rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group overflow-hidden">
-              
-              {/* Card Header */}
-              <div className="p-6 pb-4 flex justify-between items-start">
-                <div className="flex gap-4">
-                   {getCategoryIcon(req.category)}
-                   <div>
-                     <span className="text-[10px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-widest">{req.category}</span>
-                     <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mt-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{req.item}</h3>
-                   </div>
-                </div>
-                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${getUrgencyStyle(req.urgency)}`}>
-                  {req.urgency}
-                </span>
-              </div>
-
-              {/* Card Body */}
-              <div className="px-6 space-y-4 flex-1">
-                <p className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed font-medium">
-                  {req.description}
-                </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pledges.map(pledge => (
+              <div key={pledge.id} className="bg-white dark:bg-[#111] p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-bl-xl">PENDING</div>
                 
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-500 font-bold bg-slate-50 dark:bg-white/5 p-2.5 rounded-xl border border-slate-100 dark:border-white/5">
-                  <MapPin size={14} className="text-slate-400 dark:text-zinc-600 shrink-0" />
-                  <span className="truncate">{req.location}</span>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-slate-100 dark:bg-zinc-900 rounded-lg">
+                    <Package size={20} className="text-slate-600 dark:text-zinc-400" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500 font-bold uppercase">Donating</div>
+                    <div className="text-lg font-black">{pledge.amount} x {pledge.ResourceRequest?.item || 'Item'}</div>
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-500 font-medium">
-                   <Clock size={14} />
-                   <span>Expires in: <span className="text-slate-700 dark:text-zinc-300 font-bold">{req.deadline}</span></span>
+
+                <div className="space-y-2 mb-5 text-sm bg-slate-50 dark:bg-zinc-900/50 p-3 rounded-lg">
+                  <div className="flex justify-between"><span className="text-slate-500">Donor:</span> <span className="font-bold">{pledge.donorName}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Contact:</span> <span className="font-bold">{pledge.contact}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Date:</span> <span>{new Date(pledge.createdAt).toLocaleDateString()}</span></div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button onClick={() => handleRejectPledge(pledge.id)} className="flex-1 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 text-slate-600 font-bold text-xs hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-center gap-1">
+                    <XCircle size={16} /> Reject
+                  </button>
+                  <button onClick={() => handleApprovePledge(pledge.id)} className="flex-1 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1 shadow-lg">
+                    <CheckCircle2 size={16} /> Confirm Receipt
+                  </button>
                 </div>
               </div>
+            ))}
+            
+            {pledges.length === 0 && !loading && (
+              <div className="col-span-full py-12 text-center text-slate-400 italic">No pending donations to verify.</div>
+            )}
+          </div>
+        </div>
+      )}
 
-              {/* Progress Bar Area */}
-              <div className="px-6 py-5 mt-2">
-                <div className="flex justify-between text-xs mb-1.5 font-bold uppercase tracking-wider">
-                  <span className={percentage >= 100 ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"}>
-                    {req.collected} <span className="text-slate-400 dark:text-zinc-600 font-normal normal-case">collected</span>
-                  </span>
-                  <span className="text-slate-900 dark:text-white">
-                    {req.required} <span className="text-slate-400 dark:text-zinc-600 font-normal normal-case">needed</span>
-                  </span>
-                </div>
-                <div className="w-full bg-slate-100 dark:bg-white/10 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-1000 ${percentage >= 100 ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.5)]'}`} 
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
-              </div>
+      {/* --- TAB 2: MANAGE REQUESTS (CRUD) --- */}
+      {activeTab === 'requests' && (
+        <div className="max-w-7xl mx-auto">
+          {/* Search */}
+          <div className="mb-6 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18}/>
+            <input 
+              type="text" 
+              placeholder="Search requests..." 
+              className="w-full pl-12 pr-4 py-3 bg-white dark:bg-[#111] border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-              {/* Card Footer */}
-              <div className="p-4 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
-                <button 
-                   disabled={percentage >= 100}
-                   className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-                     percentage >= 100 
-                     ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 cursor-default'
-                     : 'bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 text-white shadow-lg'
-                   }`}
-                >
-                  {percentage >= 100 ? (
-                    <>
-                      <CheckCircle size={18} />
-                      Goal Reached
-                    </>
-                  ) : (
-                    <>
-                      <Truck size={18} />
-                      I can Send This
-                      <ChevronRight size={16} className="opacity-50" />
-                    </>
-                  )}
-                </button>
-              </div>
+          <div className="bg-white dark:bg-[#111] rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50 dark:bg-zinc-900 text-xs font-bold uppercase text-slate-500 dark:text-zinc-500">
+                <tr>
+                  <th className="p-4">Item</th>
+                  <th className="p-4">Category</th>
+                  <th className="p-4">Location</th>
+                  <th className="p-4">Progress</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-sm">
+                {filteredRequests.map(req => (
+                  <tr key={req.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
+                    <td className="p-4 font-bold text-slate-900 dark:text-white">
+                      {req.item}
+                      {req.urgency === 'Critical' && <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded border border-red-200">CRITICAL</span>}
+                    </td>
+                    <td className="p-4 text-slate-600 dark:text-zinc-400">{req.category}</td>
+                    <td className="p-4 text-slate-600 dark:text-zinc-400">{req.location}</td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2 text-xs font-bold mb-1">
+                        <span className="text-blue-600">{req.collected}</span> / <span className="text-slate-600">{req.required}</span>
+                      </div>
+                      <div className="w-24 h-1.5 bg-slate-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500" style={{ width: `${Math.min((req.collected/req.required)*100, 100)}%` }}></div>
+                      </div>
+                    </td>
+                    <td className="p-4">{getStatusBadge(req.status)}</td>
+                    <td className="p-4 text-right space-x-2">
+                      <button onClick={() => openEdit(req)} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-400 hover:text-blue-600 rounded-lg">
+                        <Pencil size={16} />
+                      </button>
+                      <button onClick={() => handleDeleteRequest(req.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-600 rounded-lg">
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredRequests.length === 0 && !loading && (
+              <div className="p-10 text-center text-slate-400 italic">No requests found</div>
+            )}
+          </div>
+        </div>
+      )}
 
+      {/* --- Edit Modal --- */}
+      {isEditOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111] w-full max-w-lg rounded-2xl p-6 border border-slate-200 dark:border-zinc-800 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold dark:text-white">Edit Request</h2>
+              <button onClick={() => setIsEditOpen(false)}><X className="text-slate-400 hover:text-red-500"/></button>
             </div>
-          );
-        })}
-      </div>
+            
+            <form onSubmit={handleUpdateRequest} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Item Name</label>
+                  <input className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg outline-none" 
+                    value={editForm.item} onChange={e => setEditForm({...editForm, item: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Status</label>
+                  <select className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg"
+                    value={editForm.status} onChange={e => setEditForm({...editForm, status: e.target.value})}>
+                    <option>Active</option><option>Fulfilled</option><option>Expired</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Collected</label>
+                  <input type="number" className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg" 
+                    value={editForm.collected} onChange={e => setEditForm({...editForm, collected: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Required</label>
+                  <input type="number" className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg" 
+                    value={editForm.required} onChange={e => setEditForm({...editForm, required: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Location</label>
+                  <input className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg" 
+                    value={editForm.location} onChange={e => setEditForm({...editForm, location: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Urgency</label>
+                  <select className="w-full p-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg"
+                    value={editForm.urgency} onChange={e => setEditForm({...editForm, urgency: e.target.value})}>
+                    <option>Normal</option><option>High</option><option>Critical</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl mt-4 flex items-center justify-center gap-2">
+                <Save size={18} /> Update Request
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
-};
-
-export default ResourceRequests;
+}

@@ -1,215 +1,221 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
-  Phone, MapPin, Users, Shield, Award, Search, 
-  UserPlus, MessageCircle, Siren 
+  Clock, CheckCircle2, AlertTriangle, MapPin, Phone, 
+  Trash2, ArrowRight, Activity, Shield, Loader, RefreshCw 
 } from 'lucide-react';
 
-// --- Mock Data ---
-const initialGroups = [
-  {
-    id: 1,
-    name: "NCC Unit 12 - Rapid Response",
-    type: "Uniformed Force",
-    members: 45,
-    location: "Kochi, North Sector",
-    status: "Active",
-    specialty: ["Crowd Control", "Rescue", "Logistics"],
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/NCC_flag.svg/1200px-NCC_flag.svg.png"
-  },
-  {
-    id: 2,
-    name: "NSS Kerala Volunteers",
-    type: "Student Volunteer",
-    members: 120,
-    location: "Thrissur District",
-    status: "Standby",
-    specialty: ["Food Distribution", "Cleaning", "First Aid"],
-    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/NSS-symbol.jpeg/800px-NSS-symbol.jpeg"
-  },
-  {
-    id: 3,
-    name: "Coastal Warriors (Fishermen)",
-    type: "Civilian Rescue",
-    members: 15,
-    location: "Alappuzha Coast",
-    status: "Deployed",
-    specialty: ["Boat Rescue", "Water Navigation"],
-    image: null 
-  },
-  {
-    id: 4,
-    name: "Trauma Care Unit",
-    type: "Medical",
-    members: 8,
-    location: "Calicut City",
-    status: "Active",
-    specialty: ["Emergency Medical", "Ambulance"],
-    image: null
-  }
-];
+const API_URL = 'http://localhost:5000/api/v1/help-requests';
 
-const LocalSupportNetwork = () => {
-  const [filter, setFilter] = useState('All');
-  const [searchTerm, setSearchTerm] = useState('');
+export default function LocalSupportNetwork() {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Filter Logic
-  const filteredGroups = initialGroups.filter(group => {
-    const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          group.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filter === 'All' || group.type === filter;
-    return matchesSearch && matchesFilter;
-  });
-
-  const getStatusStyle = (status) => {
-    switch(status) {
-      case 'Active': 
-        return 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20';
-      case 'Deployed': 
-        return 'bg-red-100 text-red-700 border-red-200 animate-pulse dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20';
-      case 'Standby': 
-        return 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20';
-      default: 
-        return 'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-zinc-400';
+  // --- Fetch Data ---
+  const fetchRequests = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    try {
+      const res = await axios.get(API_URL);
+      setRequests(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
+  useEffect(() => {
+    fetchRequests();
+    // Optional: Auto-refresh every 30 seconds for a "Live" feel
+    const interval = setInterval(() => fetchRequests(false), 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // --- Actions ---
+  const updateStatus = async (id, newStatus) => {
+    // Optimistic Update (Update UI instantly)
+    setRequests(prev => prev.map(req => req.id === id ? { ...req, status: newStatus } : req));
+    
+    try {
+      await axios.put(`${API_URL}/${id}`, { status: newStatus });
+    } catch (err) {
+      alert("Failed to update status on server");
+      fetchRequests(); // Revert on fail
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Archive this request record?")) return;
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      setRequests(prev => prev.filter(req => req.id !== id));
+    } catch (err) {
+      alert("Delete failed");
+    }
+  };
+
+  // --- Filtering for Columns ---
+  const pendingRequests = requests.filter(r => r.status === 'Pending');
+  const activeRequests = requests.filter(r => r.status === 'In Progress');
+  const resolvedRequests = requests.filter(r => r.status === 'Resolved');
+
+  // --- Helper Components ---
+  const UrgencyBadge = ({ level }) => {
+    const styles = {
+      Critical: "bg-red-500 text-white animate-pulse shadow-red-500/50",
+      Urgent: "bg-orange-500 text-white",
+      Normal: "bg-blue-500 text-white"
+    };
+    return (
+      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${styles[level] || styles.Normal}`}>
+        {level}
+      </span>
+    );
+  };
+
+  const RequestCard = ({ req }) => (
+    <div className={`bg-white dark:bg-[#111] p-4 rounded-xl border-l-4 shadow-sm mb-4 transition-all hover:translate-y-[-2px] hover:shadow-md
+      ${req.urgency === 'Critical' ? 'border-l-red-500 dark:border-l-red-600' : 'border-l-slate-200 dark:border-l-zinc-700'}
+    `}>
+      {/* Header */}
+      <div className="flex justify-between items-start mb-2">
+        <UrgencyBadge level={req.urgency} />
+        <span className="text-[10px] font-mono text-slate-400">#{req.id}</span>
+      </div>
+
+      {/* Content */}
+      <h4 className="font-bold text-slate-900 dark:text-white">{req.requesterName}</h4>
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 mt-1">
+        <MapPin size={12} /> {req.location}
+      </div>
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 mt-1">
+        <Phone size={12} /> <a href={`tel:${req.contact}`} className="hover:text-blue-500">{req.contact}</a>
+      </div>
+
+      <p className="mt-3 text-sm text-slate-700 dark:text-zinc-300 bg-slate-50 dark:bg-white/5 p-2 rounded-lg border border-slate-100 dark:border-white/5">
+        "{req.message}"
+      </p>
+
+      {/* Team Info */}
+      <div className="mt-3 flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-zinc-500">
+        <Shield size={12} className="text-blue-500"/>
+        Assigned: {req.SupportGroup ? req.SupportGroup.name : 'Unknown Team'}
+      </div>
+
+      {/* Actions */}
+      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10 flex justify-between items-center">
+        <button onClick={() => handleDelete(req.id)} className="text-slate-400 hover:text-red-500 transition-colors">
+          <Trash2 size={16} />
+        </button>
+
+        {/* Status Actions based on current status */}
+        {req.status === 'Pending' && (
+          <button 
+            onClick={() => updateStatus(req.id, 'In Progress')}
+            className="bg-slate-900 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-zinc-200 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"
+          >
+            Dispatch <ArrowRight size={12} />
+          </button>
+        )}
+
+        {req.status === 'In Progress' && (
+          <button 
+            onClick={() => updateStatus(req.id, 'Resolved')}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"
+          >
+            Resolve <CheckCircle2 size={12} />
+          </button>
+        )}
+        
+        {req.status === 'Resolved' && (
+           <span className="text-emerald-500 text-xs font-bold flex items-center gap-1">
+             <CheckCircle2 size={12}/> Done
+           </span>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#050505] text-slate-800 dark:text-gray-200 font-sans p-4 md:p-8 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#050505] text-slate-800 dark:text-gray-200 font-sans p-6 transition-colors duration-300">
       
-      {/* --- Header Section --- */}
-      <div className="max-w-7xl mx-auto mb-8">
-        <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-              <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                <Users className="text-blue-600 dark:text-blue-400" size={32} />
-              </div>
-              Local Support Network
-            </h1>
-            <p className="text-slate-500 dark:text-zinc-400 mt-2 text-lg">
-              Connect with verified response teams, NGOs, and volunteer squads in your area.
-            </p>
+      {/* --- Dashboard Header --- */}
+      <div className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <Activity className="text-red-600" /> MISSION CONTROL
+          </h1>
+          <p className="text-slate-500 dark:text-zinc-500 text-sm mt-1">Real-time assistance coordination</p>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#111] rounded-full border border-slate-200 dark:border-zinc-800 shadow-sm text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Live Feed
           </div>
-          
-          <button className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 text-white px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg hover:shadow-xl">
-            <UserPlus size={18} />
-            Register Team
+          <button onClick={() => fetchRequests(true)} disabled={refreshing} className="p-2 bg-white dark:bg-[#111] rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 transition-all">
+            <RefreshCw size={20} className={refreshing ? 'animate-spin text-blue-500' : 'text-slate-500'} />
           </button>
         </div>
       </div>
 
-      {/* --- Search & Filters --- */}
-      <div className="max-w-7xl mx-auto mb-8 sticky top-4 z-20">
-        <div className="bg-white dark:bg-[#0a0a0a] p-2 rounded-2xl shadow-lg shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-white/10 flex flex-col md:flex-row gap-2">
+      {loading ? (
+        <div className="flex justify-center py-20"><Loader className="animate-spin text-blue-500" size={40} /></div>
+      ) : (
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Search Bar */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" size={20} />
-            <input 
-              type="text" 
-              placeholder="Search by team name or location..." 
-              className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border-none focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 dark:text-white font-medium placeholder:text-slate-400 dark:placeholder:text-zinc-600"
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          {/* Column 1: PENDING */}
+          <div className="bg-slate-100/50 dark:bg-zinc-900/30 p-4 rounded-3xl border border-slate-200 dark:border-zinc-800 h-fit">
+            <div className="flex items-center justify-between mb-4 px-2">
+              <h3 className="font-bold text-slate-700 dark:text-zinc-300 flex items-center gap-2">
+                <AlertTriangle size={18} className="text-red-500" /> Incoming
+              </h3>
+              <span className="bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 px-2 py-0.5 rounded-full text-xs font-bold">
+                {pendingRequests.length}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {pendingRequests.map(req => <RequestCard key={req.id} req={req} />)}
+              {pendingRequests.length === 0 && <div className="text-center py-10 text-slate-400 text-xs italic">No new alerts</div>}
+            </div>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto p-1 md:p-0 no-scrollbar">
-            {['All', 'Uniformed Force', 'Civilian Rescue', 'Medical'].map((type) => (
-              <button
-                key={type}
-                onClick={() => setFilter(type)}
-                className={`
-                  px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all border
-                  ${filter === type 
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/30' 
-                    : 'bg-white dark:bg-transparent text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}
-                `}
-              >
-                {type}
-              </button>
-            ))}
+          {/* Column 2: IN PROGRESS */}
+          <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-3xl border border-blue-100 dark:border-blue-900/30 h-fit">
+            <div className="flex items-center justify-between mb-4 px-2">
+              <h3 className="font-bold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                <Clock size={18} /> Active / Assigned
+              </h3>
+              <span className="bg-blue-200 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full text-xs font-bold">
+                {activeRequests.length}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {activeRequests.map(req => <RequestCard key={req.id} req={req} />)}
+              {activeRequests.length === 0 && <div className="text-center py-10 text-slate-400 text-xs italic">No active missions</div>}
+            </div>
           </div>
+
+          {/* Column 3: RESOLVED */}
+          <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-3xl border border-emerald-100 dark:border-emerald-900/30 h-fit">
+            <div className="flex items-center justify-between mb-4 px-2">
+              <h3 className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                <CheckCircle2 size={18} /> Resolved
+              </h3>
+              <span className="bg-emerald-200 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full text-xs font-bold">
+                {resolvedRequests.length}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {resolvedRequests.map(req => <RequestCard key={req.id} req={req} />)}
+              {resolvedRequests.length === 0 && <div className="text-center py-10 text-slate-400 text-xs italic">History empty</div>}
+            </div>
+          </div>
+
         </div>
-      </div>
-
-      {/* --- Cards Grid --- */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        
-        {filteredGroups.map((group) => (
-          <div key={group.id} className="bg-white dark:bg-[#0a0a0a] rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden group">
-            
-            {/* Card Header / Status */}
-            <div className="p-6 pb-4">
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-16 h-16 bg-slate-50 dark:bg-white/5 rounded-2xl flex items-center justify-center overflow-hidden border border-slate-100 dark:border-white/5">
-                  {group.image ? (
-                    <div className="w-full h-full bg-cover bg-center" style={{backgroundImage: `url('${group.image}')`}}></div>
-                  ) : (
-                    <Shield className="text-slate-400 dark:text-zinc-600" size={32} />
-                  )}
-                </div>
-                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusStyle(group.status)}`}>
-                  {group.status}
-                </span>
-              </div>
-
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 leading-tight">{group.name}</h3>
-              <div className="flex items-center gap-2 text-slate-500 dark:text-zinc-500 text-sm mb-5 font-medium">
-                <MapPin size={16} />
-                <span>{group.location}</span>
-              </div>
-
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {group.specialty.map((tag, idx) => (
-                  <span key={idx} className="bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-zinc-400 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-100 dark:border-white/5">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Stats Divider */}
-            <div className="border-t border-slate-100 dark:border-white/5 px-6 py-4 flex gap-6 bg-slate-50/50 dark:bg-white/[0.02]">
-               <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
-                 <Users size={16} className="text-blue-500" />
-                 {group.members} Members
-               </div>
-               <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wide">
-                 <Award size={16} className="text-orange-500" />
-                 Verified
-               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="p-4 pt-0 mt-2 flex gap-3">
-              <button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-600/20">
-                <Phone size={18} />
-                Call
-              </button>
-              <button className="flex-1 bg-white dark:bg-transparent border-2 border-slate-200 dark:border-white/10 hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 text-slate-700 dark:text-zinc-400 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all">
-                <MessageCircle size={18} />
-                Request
-              </button>
-            </div>
-          </div>
-        ))}
-        
-        {/* Empty State */}
-        {filteredGroups.length === 0 && (
-          <div className="col-span-full py-20 text-center flex flex-col items-center">
-            <div className="w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-6 text-slate-400 dark:text-zinc-600">
-              <Siren size={40} />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No teams found</h3>
-            <p className="text-slate-500 dark:text-zinc-500">We couldn't find any teams matching your search in this area.</p>
-          </div>
-        )}
-
-      </div>
+      )}
     </div>
   );
-};
-
-export default LocalSupportNetwork;
+}
