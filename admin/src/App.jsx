@@ -20,6 +20,7 @@ import SafetyInfoPage from "./pages/SafetyInfoPage";
 import RescueView from "../../frontend/src/pages/RescueView";
 import NotificationAdmin from "./pages/NotificationAdmin";
 import MapAdmin from "./pages/MapAdmin";
+import UserAdmin from "./pages/UserAdmin";
 export default function App() {
   return (
     <Routes>
@@ -40,6 +41,7 @@ export default function App() {
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings-profile" element={<EditProfile section="profile" />} />
+        <Route path="/settings-security" element={<UserAdmin section="security" />} />
         <Route path="/donate" element={<DonatePage  />} />
 
         <Route path="/local-support-network" element={<LocalSupportNetwork />} />

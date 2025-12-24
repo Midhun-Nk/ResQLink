@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
-
+from dotenv import load_dotenv  # Ensure 'python-dotenv' is installed
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'rescue',
     'notification',
     'navigation',
+    'users',
 
 ]
 
@@ -61,8 +62,27 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'disaster_management.urls'
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+]
 
+AUTH_USER_MODEL = 'users.User'
+
+ROOT_URLCONF = 'disaster_management.urls'
+# Load the .env file
+load_dotenv()
+
+SIMPLE_JWT = {
+    # Use the environment variable
+    'SIGNING_KEY': os.getenv('JWT_SECRET_KEY', 'fallback-secret-for-dev-only'),
+
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

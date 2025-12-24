@@ -9,6 +9,8 @@ djangorestframework = "*"
 mysqlclient = "*"
 python-decouple = "*"
 django-cors-headers = "*"
+bcrypt = "*"
+django-bcrypt = "*"
 
 [dev-packages]
 
