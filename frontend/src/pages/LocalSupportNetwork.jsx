@@ -5,6 +5,7 @@ import {
   UserPlus, MessageCircle, Siren, Loader, X, Save,
   Pencil, Trash2, Send, AlertTriangle 
 } from 'lucide-react';
+import AdminLocal from './LocalAdmin';
 
 const API_URL = 'http://localhost:5000/api/v1/support-groups';
 
@@ -326,6 +327,7 @@ export default function LocalSupportNetwork() {
           </div>
         </div>
       )}
+      <AdminLocal />
 
     </div>
   );

@@ -7,7 +7,7 @@ import {
 
 const API_URL = 'http://localhost:5000/api/v1/help-requests';
 
-export default function LocalSupportNetwork() {
+export default function AdminLocal() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -216,7 +216,6 @@ export default function LocalSupportNetwork() {
 
         </div>
       )}
-      
     </div>
   );
 }

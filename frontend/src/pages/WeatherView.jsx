@@ -428,15 +428,7 @@ function WeatherView() {
 
           </div>
 
-          {/* ACTION FOOTER */}
-          <div className="grid grid-cols-2 gap-4">
-            <button className="bg-red-50 border-2 border-red-100 text-red-600 dark:bg-red-500/10 dark:border-red-500/20 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 p-4 rounded-xl font-black text-xs tracking-widest flex items-center justify-center gap-2 transition-colors uppercase">
-              <ShieldAlert className="w-4 h-4" /> Initiate Evacuation
-            </button>
-            <button className="bg-slate-900 text-white dark:bg-white dark:text-black hover:bg-slate-800 dark:hover:bg-zinc-200 p-4 rounded-xl font-black text-xs tracking-widest flex items-center justify-center gap-2 transition-colors uppercase">
-              <Radio className="w-4 h-4" /> Broadcast Alert
-            </button>
-          </div>
+          
 
         </div>
       )}

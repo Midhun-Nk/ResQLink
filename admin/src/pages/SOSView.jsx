@@ -9,7 +9,7 @@ import 'leaflet-routing-machine';
 // Icons
 import { 
   MapPin, Phone, AlertOctagon, Activity, ShieldAlert, 
-  Navigation, User, ArrowLeft, Siren, ExternalLink, Clock, Radio, Globe, Target, Map
+  Navigation, User, ArrowLeft, Siren, ExternalLink, Clock, Radio, Globe, Target, Mic, MessageSquareWarning
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -151,7 +151,7 @@ export const SOSView = () => {
   };
 
   const openGoogleMaps = (lat, lng) => {
-    const url = `http://maps.google.com/maps?q=${lat},${lng}`;
+    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     window.open(url, '_blank');
   };
 
@@ -251,18 +251,36 @@ export const SOSView = () => {
                                     </span>
                                 </div>
 
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-12 h-12 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center border border-slate-200 dark:border-white/5">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center border border-slate-200 dark:border-white/5 shrink-0">
                                         <User size={24} className="text-slate-600 dark:text-zinc-400" />
                                     </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">{alert.userName || "Unknown Victim"}</h3>
+                                    <div className="overflow-hidden">
+                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight truncate">{alert.userName || "Unknown Victim"}</h3>
                                         <div className="flex items-center gap-2 mt-1 text-slate-500 dark:text-zinc-400 text-sm font-medium">
                                             <Phone size={12} />
                                             <span>{alert.contactNumber || "No Contact Info"}</span>
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* --- NEW: MESSAGE / VOICE NOTE DISPLAY --- */}
+                                {(alert.voiceNote || alert.message) && (
+                                    <div className={`
+                                        p-3 rounded-xl mb-5 text-sm border
+                                        ${alert.voiceNote 
+                                            ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-100 dark:border-amber-900/30 text-amber-900 dark:text-amber-100' 
+                                            : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10 text-slate-700 dark:text-slate-300'
+                                        }
+                                    `}>
+                                        <div className="flex items-start gap-2">
+                                            {alert.voiceNote ? <Mic size={16} className="mt-0.5 shrink-0 opacity-70" /> : <MessageSquareWarning size={16} className="mt-0.5 shrink-0 opacity-70" />}
+                                            <p className={`leading-relaxed ${alert.voiceNote ? 'italic font-medium' : ''}`}>
+                                                "{alert.voiceNote || alert.message}"
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                                 
                                 <div className="bg-slate-50 dark:bg-white/5 rounded-lg p-3 mb-4 border border-slate-100 dark:border-white/5 flex items-center justify-between">
                                     <div>
@@ -309,9 +327,8 @@ export const SOSView = () => {
                 zoom={5} 
                 className="flex-1 w-full h-full z-0"
             >
-                {/* DARK MODE MAP TILES */}
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>'
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 />
 
@@ -322,12 +339,19 @@ export const SOSView = () => {
                         <Popup>
                             <div className="p-1 min-w-[200px] text-center font-sans">
                                 <h3 className="font-bold text-lg text-slate-800">{alert.userName}</h3>
+                                {/* Popup Message Display */}
+                                {(alert.voiceNote || alert.message) && (
+                                    <div className="my-2 p-2 bg-amber-50 border border-amber-100 rounded text-left text-xs text-amber-900 italic flex gap-1">
+                                        <Mic size={12} className="shrink-0 mt-0.5" />
+                                        "{alert.voiceNote || alert.message}"
+                                    </div>
+                                )}
                                 <p className="text-xs text-slate-500 mb-2">SOS at {formatTime(alert.timestamp)}</p>
                                 <button 
                                     onClick={() => handleLocate(alert)}
                                     className="w-full bg-red-600 text-white text-xs font-bold py-2 rounded flex items-center justify-center gap-2 hover:bg-red-700"
                                 >
-                                    <Target size={14} /> NAVIGATE TO THIS VICTIM
+                                    <Target size={14} /> NAVIGATE TO VICTIM
                                 </button>
                             </div>
                         </Popup>
@@ -380,9 +404,8 @@ export const SOSView = () => {
                 zoom={14} 
                 className="flex-1 w-full h-full z-0"
             >
-                {/* DARK MODE MAP TILES */}
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>'
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 />
 
@@ -407,6 +430,13 @@ export const SOSView = () => {
                             
                             <div className="mb-3">
                                 <h3 className="text-lg font-bold text-slate-800">{selectedAlert.userName}</h3>
+                                {/* Navigation Popup Message Display */}
+                                {(selectedAlert.voiceNote || selectedAlert.message) && (
+                                    <div className="my-2 p-2 bg-red-50 border border-red-100 rounded text-left text-xs text-red-900 italic flex gap-1">
+                                        <Mic size={12} className="shrink-0 mt-0.5" />
+                                        "{selectedAlert.voiceNote || selectedAlert.message}"
+                                    </div>
+                                )}
                                 <p className="text-xs text-slate-500">Signal: {formatTime(selectedAlert.timestamp)}</p>
                             </div>
 

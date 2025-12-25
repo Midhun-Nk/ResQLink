@@ -19,6 +19,7 @@ import ContactsPage from "./pages/ContactsPage";
 import SafetyInfoPage from "./pages/SafetyInfoPage";
 import RescueView from "./pages/RescueView";
 import MapClient from "./pages/MapClient";
+import Dictaphone from "./pages/Dictaphone";
 export default function App() {
   return (
     <Routes>
@@ -30,6 +31,9 @@ export default function App() {
         <Route path="/sos" element={<SOSView />} />
         <Route path="/rescue-channels" element={<RescueView />} />
         <Route path="/map-navigation" element={<MapClient/>} />
+                <Route path="/dictaphone" element={<Dictaphone/>} />
+
+        
         {/* <Route path="/donate" element={<PlaceholderView title="Donation Center" icon={Heart} />} /> */}
         {/* <Route path="/safety-info" element={<PlaceholderView title="Safety Guidelines" icon={Shield} />} /> */}
         {/* <Route path="/resource-requests" element={<PlaceholderView title="Resource Requests" icon={FileText} />} /> */}
@@ -38,6 +42,7 @@ export default function App() {
 
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings-profile" element={<EditProfile section="profile" />} />
+        <Route path="/settings-notifications" element={<AlertsView section="notifications" />} />
         <Route path="/donate" element={<DonatePage  />} />
 
         <Route path="/local-support-network" element={<LocalSupportNetwork />} />
