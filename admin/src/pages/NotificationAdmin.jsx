@@ -37,7 +37,7 @@ export default function NotificationAdmin() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notificationMsg, setNotificationMsg] = useState(null);
-
+  
   // Form State
   const initialForm = {
     title: '',
@@ -51,18 +51,46 @@ export default function NotificationAdmin() {
 
   const API_BASE = 'http://127.0.0.1:8000/api/v1/admin';
 
+  // --- AUTH HELPER ---
+  // We read directly from localStorage to ensure we have the token immediately
+  // avoiding async state update issues on initial load.
+  const getAuthConfig = () => {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`, // ⭐ Sends the JWT Token
+      }
+    };
+  };
+
   // --- API CALLS ---
   const fetchData = async () => {
     setLoading(true);
+    const config = getAuthConfig();
+    
+    if (!config) {
+        setLoading(false);
+        showNotify("No login token found. Please log in.", "error");
+        return;
+    }
+
     try {
       const [notifRes, userRes] = await Promise.all([
-        axios.get(`${API_BASE}/notifications/`),
-        axios.get(`${API_BASE}/users/`)
+        axios.get(`${API_BASE}/notifications/`, config),
+        axios.get(`${API_BASE}/users/`, config)
       ]);
       setNotifications(notifRes.data);
       setUsers(userRes.data);
     } catch (err) {
-      showNotify("Failed to fetch data", "error");
+      console.error(err);
+      if (err.response?.status === 401) {
+        showNotify("Session expired. Please log in again.", "error");
+      } else if (err.response?.status === 403) {
+        showNotify("Access Denied: Admins only.", "error");
+      } else {
+        showNotify("Failed to fetch data", "error");
+      }
     } finally {
       setLoading(false);
     }
@@ -80,7 +108,7 @@ export default function NotificationAdmin() {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this notification record?")) return;
     try {
-      await axios.delete(`${API_BASE}/notifications/${id}/`);
+      await axios.delete(`${API_BASE}/notifications/${id}/`, getAuthConfig());
       showNotify("Deleted successfully", "success");
       fetchData(); // Refresh list
     } catch (err) {
@@ -97,9 +125,6 @@ export default function NotificationAdmin() {
       return;
     }
 
-    // Set loading state just for the modal logic if desired, 
-    // but here we let global loading handle the refetch
-    
     const payload = {
         title: formData.title,
         message: formData.message,
@@ -110,14 +135,20 @@ export default function NotificationAdmin() {
     };
 
     try {
-      await axios.post(`${API_BASE}/notifications/`, payload);
+      // ⭐ Pass config as the 3rd argument for POST requests
+      await axios.post(`${API_BASE}/notifications/`, payload, getAuthConfig());
+      
       showNotify(formData.send_to_all ? "Broadcast sent to everyone!" : "Notification sent!", "success");
       setIsModalOpen(false);
       setFormData(initialForm); 
       fetchData();
     } catch (err) {
       console.error(err);
-      showNotify("Failed to send", "error");
+      if (err.response?.status === 403) {
+        showNotify("Permission Denied: You cannot send alerts.", "error");
+      } else {
+        showNotify("Failed to send", "error");
+      }
     }
   };
 

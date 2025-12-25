@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const AppContext = createContext();
 
@@ -7,6 +8,7 @@ const baseURL = import.meta.env.VITE_API_URL;
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -72,12 +74,12 @@ export const AppProvider = ({ children }) => {
   // Logout
   // -------------------------------------------------------
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-    setUser(null);
-    window.location.href = "/login";
-  };
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("user");
+  setUser(null);
+  navigate("/login", { replace: true });
+};
 
 
  

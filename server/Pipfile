@@ -11,6 +11,8 @@ python-decouple = "*"
 django-cors-headers = "*"
 bcrypt = "*"
 django-bcrypt = "*"
+python-dotenv = "*"
+pyjwt = "*"
 
 [dev-packages]
 

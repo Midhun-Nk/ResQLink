@@ -65,7 +65,7 @@ export const loginUser = async (req, res) => {
 
     // create jwt token
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { user_id: user.id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -85,15 +85,9 @@ export const loginUser = async (req, res) => {
 // =========================
 export const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.user_id;
 
-    const { 
-      fullName, 
-      phoneNumber, 
-      bloodGroup, 
-      profile, 
-      location 
-    } = req.body;
+    const { fullName, phoneNumber, bloodGroup, profile, location } = req.body;
 
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -103,7 +97,6 @@ export const updateProfile = async (req, res) => {
     user.bloodGroup = bloodGroup ?? user.bloodGroup;
     user.profile = profile ?? user.profile;
 
-    // ⭐ Store EVERYTHING in JSON
     user.location = {
       ...user.location,
       ...location
@@ -111,13 +104,8 @@ export const updateProfile = async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({
-      message: "Profile updated successfully",
-      user
-    });
-
+    res.status(200).json({ message: "Profile updated successfully", user });
   } catch (err) {
-    console.log("UPDATE PROFILE ERROR:", err);
     res.status(500).json({ message: "Something went wrong", error: err.message });
   }
 };

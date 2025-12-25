@@ -1,27 +1,40 @@
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key_here";
 
 /* ============================
    🔐 AUTHENTICATE USER MIDDLEWARE
    Checks JWT token validity
 ===============================*/
-export const authenticate = async (req, res, next) => {
+
+const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key_here";
+
+export const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Authorization token missing" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
   try {
-    const token = req.headers.authorization?.split(" ")[1]; // "Bearer token"
-
-    if (!token) return res.status(401).json({ message: "Unauthorized. Token missing." });
-
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    // Attach user to request to use later
-    req.user = await User.findByPk(decoded.id);
-
-    if (!req.user) return res.status(401).json({ message: "User not found" });
+    // Attach decoded data to request
+    req.user = decoded; 
+    /*
+      req.user = {
+        user_id,
+        email,
+        role,
+        iat,
+        exp
+      }
+    */
 
     next();
-  } catch (error) {
+  } catch (err) {
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };

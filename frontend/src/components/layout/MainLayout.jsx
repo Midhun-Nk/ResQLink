@@ -18,6 +18,7 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme(); 
+  const { logout} = useApp()
   const isDark = theme === 'dark';
 
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -211,10 +212,10 @@ export default function MainLayout() {
             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 ring-2 ring-white dark:ring-zinc-800" alt="profile" />
             {!isMini && <>
               <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Sarah Connor</p>
-                <p className="text-xs text-gray-500 dark:text-zinc-500">Field Commander</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{user?.fullName || "Mike"}</p>
+                <p className="text-[10px] text-gray-500 dark:text-zinc-500 uppercase tracking-wider font-semibold">{user?.role || "Field Commander"}</p>
               </div>
-              <button className="text-gray-400 hover:text-red-600 dark:text-zinc-600 dark:hover:text-red-500 ml-auto transition-colors">
+              <button className="text-gray-400 hover:text-red-600 dark:text-zinc-600 dark:hover:text-red-500 ml-auto transition-colors" onClick={logout}>
                 <LogOut size={18}/>
               </button>
             </>}
@@ -297,7 +298,9 @@ export default function MainLayout() {
             <div className="flex items-center pl-4 border-l border-solid border-gray-200 dark:border-zinc-900">
               <div className="hidden md:block text-right mr-3">
                 <h6 className="font-bold text-sm text-gray-900 dark:text-white">{user?.fullName || "Mike"}</h6>
-                <span className="text-[10px] text-gray-500 dark:text-zinc-500 uppercase tracking-wider font-semibold">Coordinator</span>
+                <span className="text-[10px] text-gray-500 dark:text-zinc-500 uppercase tracking-wider font-semibold">
+                  {user?.role || "Field Commander"}
+                </span>
               </div>
               <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-800 ring-2 ring-white dark:ring-zinc-800"/>
             </div>

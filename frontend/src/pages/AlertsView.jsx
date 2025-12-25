@@ -1,9 +1,42 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Filter, BellRing } from "lucide-react";
-import { alertsData } from "../assets/data";
-import { AlertCard } from "../components/AlertCard"; 
+import  AlertCard  from "../components/AlertCard"; 
+import axios from 'axios';
 
-export const AlertsView = () => (
+export const AlertsView = () => {
+   const API_BASE = 'http://127.0.0.1:8000/api/v1'; // Standard Django API URL
+
+ const [banner, setBanner] = useState(null);
+ const [alerts, setAlerts] = useState([]);
+ const [loadingAlerts, setLoadingAlerts] = useState(true);
+   useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const headers = token
+        ? { Authorization: `Bearer ${token}` }
+        : {}; // ✅ public request if not logged in
+
+      const [bannerRes, listRes] = await Promise.all([
+        axios.get(`${API_BASE}/notifications/banner/`, { headers }),
+        axios.get(`${API_BASE}/notifications/`, { headers }),
+      ]);
+
+      setBanner(bannerRes.data?.id ? bannerRes.data : null);
+      setAlerts(listRes.data || []);
+    } catch (err) {
+      console.error("Alert Fetch Error", err);
+    } finally {
+      setLoadingAlerts(false);
+    }
+  };
+
+  fetchData();
+}, []);
+
+
+   return(
   <div className="animate-in fade-in duration-500">
     
     {/* Header Section */}
@@ -37,7 +70,17 @@ export const AlertsView = () => (
 
     {/* Alert Cards Grid */}
     <div className="space-y-4">
-       {alertsData.map(alert => <AlertCard key={alert.id} alert={alert} />)}
+       {
+         loadingAlerts ? (
+             <p className="text-center text-gray-500 dark:text-gray-400">Loading alerts...</p>
+         ) : alerts.length === 0 ? (
+             <p className="text-center text-gray-500 dark:text-gray-400">No active alerts.</p>
+         ) : (
+               alerts.map((alert) => (
+                  <AlertCard key={alert.id} alert={alert} />
+               ))
+         )
+       }
     </div>
   </div>
-);
+)};

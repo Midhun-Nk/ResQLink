@@ -37,31 +37,31 @@ export const DashboardView = () => {
   }, []);
 
   // --- 2. FETCH ALERTS (Banner + List) ---
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch Banner and List in parallel
-        const [bannerRes, listRes] = await Promise.all([
-            axios.get(`${API_BASE}/notifications/banner/`), // Your new custom action
-            axios.get(`${API_BASE}/notifications/`)         // Standard list
-        ]);
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-        // Handle Banner (API returns empty string or null if no banner)
-        if (bannerRes.data && bannerRes.data.id) {
-            setBanner(bannerRes.data);
-        } else {
-            setBanner(null);
-        }
+      const headers = token
+        ? { Authorization: `Bearer ${token}` }
+        : {}; // ✅ public request if not logged in
 
-        setAlerts(listRes.data);
-      } catch (err) { 
-        console.error("Alert Fetch Error", err); 
-      } finally { 
-        setLoadingAlerts(false); 
-      }
-    };
-    fetchData();
-  }, []);
+      const [bannerRes, listRes] = await Promise.all([
+        axios.get(`${API_BASE}/notifications/banner/`, { headers }),
+        axios.get(`${API_BASE}/notifications/`, { headers }),
+      ]);
+
+      setBanner(bannerRes.data?.id ? bannerRes.data : null);
+      setAlerts(listRes.data || []);
+    } catch (err) {
+      console.error("Alert Fetch Error", err);
+    } finally {
+      setLoadingAlerts(false);
+    }
+  };
+
+  fetchData();
+}, []);
 
   // --- 3. ALERT ROTATION LOGIC ---
   useEffect(() => {
@@ -273,7 +273,7 @@ export const DashboardView = () => {
             <div className="space-y-3">
               {[
                 { icon: Phone, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-500/20', hover: 'hover:border-blue-200', title: 'Helplines', sub: 'Emergency numbers', nav: '/contacts' },
-                { icon: MapPin, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-500/20', hover: 'hover:border-green-200', title: 'Nearby Shelters', sub: 'Safe locations map', nav: '/map' },
+                { icon: MapPin, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-500/20', hover: 'hover:border-green-200', title: 'Nearby Shelters', sub: 'Safe locations map', nav: "/map-navigation" },
                 { icon: BookOpen, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-100 dark:bg-indigo-500/20', hover: 'hover:border-indigo-200', title: 'Safety Guides', sub: 'Preparedness tips', nav: '/safety-info' }
               ].map((action, i) => (
                 <button key={i} onClick={() => navigate(action.nav)} className={`w-full text-left flex items-center p-4 rounded-xl border transition-all group bg-slate-50 border-slate-100 hover:bg-white hover:shadow-md dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10 dark:hover:border-white/20 ${action.hover}`}>

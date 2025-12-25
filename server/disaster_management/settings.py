@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
+import os
+from datetime import timedelta
 from dotenv import load_dotenv  # Ensure 'python-dotenv' is installed
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,10 +29,34 @@ SECRET_KEY = 'django-insecure-kisumvwq*xzkumv&84b@9o52$h%n^ks7%qi508s-*7u8%cbc0v
 DEBUG = True
 
 ALLOWED_HOSTS = ["http://localhost:5174", "localhost", "http://localhost:5173" , "127.0.0.1"]
+# settings.py
 
-CORS_ALLOWED_ORIGINS = [
-   "http://localhost:5174","http://localhost:5173",
+# ... existing CORS settings ...
+
+load_dotenv()
+
+JWT_SECRET = "your_secret_key_here"
+JWT_ALGORITHM = "HS256"
+
+
+CORS_ALLOW_CREDENTIALS = True
+
+# ⭐ YOU MUST ADD THIS to allow the 'Authorization' header
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'authorization',
+    'x-csrftoken',
+    'x-requested-with',
 ]
+
+# Ensure your origins are correct (no trailing slashes)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+]
+
 
 # Application definition
 
@@ -52,15 +78,19 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware', # Add this at the top
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+
+    'middleware.jwt_auth.JWTAuthenticationMiddleware',
+
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
@@ -69,20 +99,15 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
 ]
 
+# AUTH_USER_MODEL = 'users.User'
 AUTH_USER_MODEL = 'users.User'
 
 ROOT_URLCONF = 'disaster_management.urls'
 # Load the .env file
-load_dotenv()
 
-SIMPLE_JWT = {
-    # Use the environment variable
-    'SIGNING_KEY': os.getenv('JWT_SECRET_KEY', 'fallback-secret-for-dev-only'),
 
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
+
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
