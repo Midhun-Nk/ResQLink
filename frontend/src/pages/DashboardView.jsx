@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 
 const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
-const API_BASE = 'http://127.0.0.1:8000/api/v1'; // Standard Django API URL
+const VITE_API_URL_PYTHON = import.meta.env.VITE_API_URL_PYTHON;
+const API_BASE = `${VITE_API_URL_PYTHON}`; // Standard Django API URL
 
 export const DashboardView = () => {
   const navigate = useNavigate();

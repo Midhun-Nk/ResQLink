@@ -89,7 +89,9 @@ export default function ContactsAdmin() {
     items: []
   });
 
-  const API_URL = 'http://127.0.0.1:8000/api/v1/safetyinfo/emergency-contacts/';
+  const VITE_API_URL_PYTHON = import.meta.env.VITE_API_URL_PYTHON;
+
+  const API_URL = `${VITE_API_URL_PYTHON}/safetyinfo/emergency-contacts/`;
 
   // --- API CALLS ---
   const fetchContacts = async () => {

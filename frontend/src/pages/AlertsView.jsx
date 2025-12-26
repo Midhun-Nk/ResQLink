@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import AlertCard from "../components/AlertCard";
 
-const API_BASE = "http://127.0.0.1:8000/api/v1";
+const VITE_API_URL_PYTHON = import.meta.env.VITE_API_URL_PYTHON;
+const API_BASE = `${VITE_API_URL_PYTHON}`;
 
 const TYPE_ORDER = ["all", "alert", "warning", "info", "success"];
 

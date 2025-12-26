@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_BASE = "http://127.0.0.1:8000/api/v1";
+const VITE_API_URL_PYTHON = import.meta.env.VITE_API_URL_PYTHON;
+const API_BASE = `${VITE_API_URL_PYTHON}`;
 
 export const useAlerts = () => {
   const [alerts, setAlerts] = useState([]);

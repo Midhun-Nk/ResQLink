@@ -100,11 +100,14 @@ export default function SafetyInfoPage() {
 
   const [notification, setNotification] = useState(null);
 
+  const VITE_API_URL_PYTHON = import.meta.env.VITE_API_URL_PYTHON;
+  const API_BASE = `${VITE_API_URL_PYTHON}`; // Standard Django API URL
+
   // --- API CALLS ---
   const fetchDisasters = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://127.0.0.1:8000/api/v1/safetyinfo/disasters/');
+      const res = await axios.get(`${API_BASE}/safetyinfo/disasters/`);
       const data = Array.isArray(res.data) ? res.data : res.data.results;
       setDisasters(data);
     } catch (err) {
@@ -139,7 +142,7 @@ export default function SafetyInfoPage() {
   const handleDelete = async (slug) => {
     if (!window.confirm("Are you sure you want to delete this disaster?")) return;
     try {
-      await axios.delete(`http://127.0.0.1:8000/api/v1/safetyinfo/disasters/${slug}/`);
+      await axios.delete(`${API_BASE}/safetyinfo/disasters/${slug}/`);
       showNotify("Deleted successfully", "success");
       fetchDisasters();
     } catch (err) {
@@ -151,10 +154,10 @@ export default function SafetyInfoPage() {
     e.preventDefault();
     try {
       if (editMode) {
-        await axios.put(`http://127.0.0.1:8000/api/v1/safetyinfo/disasters/${formData.slug}/`, formData);
+        await axios.put(`${API_BASE}/safetyinfo/disasters/${formData.slug}/`, formData);
         showNotify("Updated successfully", "success");
       } else {
-        await axios.post(`http://127.0.0.1:8000/api/v1/safetyinfo/disasters/`, formData);
+        await axios.post(`${API_BASE}/safetyinfo/disasters/`, formData);
         showNotify("Created successfully", "success");
       }
       setIsModalOpen(false);

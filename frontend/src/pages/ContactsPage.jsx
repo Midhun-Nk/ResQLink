@@ -88,6 +88,8 @@ export function ContactsPage() {
   const [emergencyData, setEmergencyData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const VITE_API_URL_PYTHON = import.meta.env.VITE_API_URL_PYTHON;
+  const API_BASE = `${VITE_API_URL_PYTHON}`; // Standard Django API URL
 
   // --- API FETCH ---
   useEffect(() => {
@@ -95,7 +97,7 @@ export function ContactsPage() {
       try {
         setLoading(true);
         // Replace with your actual backend URL
-        const response = await axios.get('http://127.0.0.1:8000/api/v1/safetyinfo/emergency-contacts/');
+        const response = await axios.get(`${API_BASE}/safetyinfo/emergency-contacts/`);
         setEmergencyData(response.data);
       } catch (err) {
         console.error("Failed to fetch contacts:", err);

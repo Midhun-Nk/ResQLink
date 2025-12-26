@@ -9,7 +9,9 @@ import { useNavigate } from 'react-router-dom';
 // --- CONSTANTS ---
 // In a real app, replace '1' with the actual logged-in User ID from your Auth Context
 const CURRENT_USER_ID = 1; 
-const API_URL = 'http://127.0.0.1:8000/api/v1/rescue-channels/';
+
+const VITE_API_URL_PYTHON = import.meta.env.VITE_API_URL_PYTHON;
+const API_URL = `${VITE_API_URL_PYTHON}/rescue-channels/`;
 
 // --- THE CARD COMPONENT ---
 const ConferenceChannelCard = ({ channel, onJoinSession }) => {

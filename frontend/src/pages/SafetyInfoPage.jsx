@@ -83,6 +83,7 @@ const SOSGuide = () => (
 
 // --- MAIN PAGE ---
 export default function SafetyInfoPage() {
+  const VITE_API_URL_PYTHON = import.meta.env.VITE_API_URL_PYTHON;
   const [disasters, setDisasters] = useState({});
   const [firstAidList, setFirstAidList] = useState([]);
   
@@ -100,7 +101,7 @@ export default function SafetyInfoPage() {
     const fetchData = async () => {
       try {
         // --- FETCH DISASTERS ---
-        const disasterRes = await axios.get('http://127.0.0.1:8000/api/v1/safetyinfo/disasters/');
+        const disasterRes = await axios.get(`${VITE_API_URL_PYTHON}/safetyinfo/disasters/`);
         
         const rawData = disasterRes.data;
         const dataArray = Array.isArray(rawData) ? rawData : rawData.results || [];
@@ -117,7 +118,7 @@ export default function SafetyInfoPage() {
         }
 
         // --- FETCH FIRST AID ---
-        const firstAidRes = await axios.get('http://127.0.0.1:8000/api/v1/safetyinfo/first-aid/');
+        const firstAidRes = await axios.get(`${VITE_API_URL_PYTHON}/safetyinfo/first-aid/`);
         const firstAidRaw = firstAidRes.data;
         const firstAidArray = Array.isArray(firstAidRaw) ? firstAidRaw : firstAidRaw.results || [];
         

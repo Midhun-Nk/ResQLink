@@ -207,7 +207,7 @@ app.use('/api/v1/auth', userRoutes);
 app.use('/api/v1/donations', dontaionRoute)
 app.use('/api/v1/support-groups', supportRoutes);
 app.use('/api/v1/help-requests', requestRoutes); 
-app.use('/api/resources', resourceRoutes);
+app.use('/api/v1/resources', resourceRoutes);
 
 app.get('/', (req, res) => {
     res.send('Node.js AI Server Running...');

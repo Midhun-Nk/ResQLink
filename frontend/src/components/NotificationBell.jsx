@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Bell, Check, X, Info, AlertTriangle, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-const API_URL = 'http://127.0.0.1:8000/api/v1/notifications/';
+const VITE_API_URL_PYTHON = import.meta.env.VITE_API_URL_PYTHON;
+
+const API_URL = `${VITE_API_URL_PYTHON}/notifications/`;
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
