@@ -7,7 +7,9 @@ import {
 } from 'lucide-react';
 import AdminLocal from './LocalAdmin';
 
-const API_URL = 'http://localhost:5000/api/v1/support-groups';
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+
+const API_URL = `${VITE_API_URL}/support-groups`;
 
 export default function LocalSupportNetwork() {
   const [groups, setGroups] = useState([]);
@@ -23,7 +25,7 @@ export default function LocalSupportNetwork() {
   const [currentId, setCurrentId] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null); // The team being requested
 
-  const REQUEST_API_URL = 'http://localhost:5000/api/v1/help-requests'; // <--- NEW API URL
+  const REQUEST_API_URL = `${VITE_API_URL}/help-requests`; // <--- NEW API URL
 
 // ... inside the component ...
 

@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 
 // Configure your API Base URL
-const API_BASE = 'http://localhost:5000/api/v1/donations'; 
+const API_BASE = `${import.meta.env.VITE_API_URL}/donations`; 
+
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID; // Replace with your actual Test Key ID
 
 const DonatePage = () => {

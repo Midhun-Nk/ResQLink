@@ -5,7 +5,9 @@ import {
 } from "lucide-react";
 
 // REPLACE WITH YOUR ACTUAL BACKEND URL
-const SOCKET_URL = "http://localhost:5000"; 
+const VITE_API_URL_SOCKET = import.meta.env.VITE_API_URL_SOCKET;
+const SOCKET_URL = `${VITE_API_URL_SOCKET}`; 
+//
 
 export const SOSView = () => {
   const [status, setStatus] = useState('idle'); // idle | confirming | locating | sent

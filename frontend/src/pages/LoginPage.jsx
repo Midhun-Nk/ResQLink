@@ -46,6 +46,7 @@ const CustomSocialButton = ({ icon: Icon, label }) => (
 );
 
 const LoginRegisterPage = () => {
+  const VITE_API_URL = import.meta.env.VITE_API_URL;
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,8 +65,8 @@ const LoginRegisterPage = () => {
 
     try {
       const url = isLoginView
-        ? "http://localhost:5000/api/v1/auth/login"
-        : "http://localhost:5000/api/v1/auth/register";
+        ? `${VITE_API_URL}/auth/login`
+        : `${VITE_API_URL}/auth/register`;
 
       const body = isLoginView
         ? { email, password }

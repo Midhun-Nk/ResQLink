@@ -58,6 +58,7 @@ const CustomDropdownField = ({ icon: Icon, value, onChange, options, placeholder
 // --- MAIN COMPONENT ---
 
 const EditProfile = () => {
+  const VITE_API_URL = import.meta.env.VITE_API_URL;
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [fullName, setFullName] = useState(user?.fullName || "");
@@ -95,7 +96,7 @@ const EditProfile = () => {
       const token = localStorage.getItem("token");
 
       const response = await axios.put(
-        "http://localhost:5000/api/v1/auth/update-profile",
+        `${VITE_API_URL}/auth/update-profile`,
         {
           fullName,
           phoneNumber,

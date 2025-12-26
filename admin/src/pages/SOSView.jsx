@@ -12,8 +12,10 @@ import {
   Navigation, User, ArrowLeft, Siren, ExternalLink, Clock, Radio, Globe, Target, Mic, MessageSquareWarning
 } from 'lucide-react';
 
+const VITE_API_URL_SOCKET = import.meta.env.VITE_API_URL_SOCKET;
+
 // --- CONFIGURATION ---
-const socket = io("http://localhost:5000");
+const socket = io(VITE_API_URL_SOCKET);
 
 // Fix Leaflet's default icon issue
 delete L.Icon.Default.prototype._getIconUrl;

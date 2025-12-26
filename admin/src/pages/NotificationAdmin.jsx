@@ -3,7 +3,8 @@ import axios from 'axios';
 import { 
   LayoutDashboard, Send, Trash2, Bell, X, 
   Loader, AlertCircle, CheckCircle2, Users,
-  Info, AlertTriangle, User, Megaphone, Check, RefreshCw
+  Info, AlertTriangle, User, Megaphone, Check, RefreshCw,
+  MapPin // <--- Imported MapPin icon
 } from "lucide-react";
 
 // --- COMPONENTS ---
@@ -32,6 +33,9 @@ const TypeBadge = ({ type }) => {
 };
 
 export default function NotificationAdmin() {
+
+  const VITE_API_URL_PYTHON = import.meta.env.VITE_API_URL_PYTHON;
+  
   const [notifications, setNotifications] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +46,7 @@ export default function NotificationAdmin() {
   const initialForm = {
     title: '',
     message: '',
+    location: '', // <--- Added location field
     notification_type: 'info',
     recipient: '', 
     send_to_all: false,
@@ -49,17 +54,15 @@ export default function NotificationAdmin() {
   };
   const [formData, setFormData] = useState(initialForm);
 
-  const API_BASE = 'http://127.0.0.1:8000/api/v1/admin';
+  const API_BASE = `${VITE_API_URL_PYTHON}/admin`;
 
   // --- AUTH HELPER ---
-  // We read directly from localStorage to ensure we have the token immediately
-  // avoiding async state update issues on initial load.
   const getAuthConfig = () => {
     const token = localStorage.getItem("token");
     if (!token) return null;
     return {
       headers: {
-        Authorization: `Bearer ${token}`, // ⭐ Sends the JWT Token
+        Authorization: `Bearer ${token}`,
       }
     };
   };
@@ -110,7 +113,7 @@ export default function NotificationAdmin() {
     try {
       await axios.delete(`${API_BASE}/notifications/${id}/`, getAuthConfig());
       showNotify("Deleted successfully", "success");
-      fetchData(); // Refresh list
+      fetchData(); 
     } catch (err) {
       showNotify("Delete failed", "error");
     }
@@ -128,6 +131,7 @@ export default function NotificationAdmin() {
     const payload = {
         title: formData.title,
         message: formData.message,
+        location: formData.location, // <--- Added location to payload
         notification_type: formData.notification_type,
         send_to_all: formData.send_to_all,
         is_banner: formData.is_banner,
@@ -135,7 +139,6 @@ export default function NotificationAdmin() {
     };
 
     try {
-      // ⭐ Pass config as the 3rd argument for POST requests
       await axios.post(`${API_BASE}/notifications/`, payload, getAuthConfig());
       
       showNotify(formData.send_to_all ? "Broadcast sent to everyone!" : "Notification sent!", "success");
@@ -288,6 +291,20 @@ export default function NotificationAdmin() {
                     className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3 font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                     placeholder="e.g. Flash Flood Warning"
                   />
+                </div>
+
+                {/* --- NEW LOCATION FIELD --- */}
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-2">Location</label>
+                  <div className="relative">
+                    <input 
+                      value={formData.location}
+                      onChange={e => setFormData({...formData, location: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                      placeholder="e.g. Kozhikode, Kerala"
+                    />
+                    <MapPin className="absolute right-4 top-3.5 text-gray-400 pointer-events-none" size={16}/>
+                  </div>
                 </div>
 
                 {/* --- TOGGLES SECTION --- */}

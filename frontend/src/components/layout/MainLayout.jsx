@@ -199,7 +199,7 @@ export default function MainLayout() {
             isSidebarCollapsed={isMini}
             subItems={[
                 { id: "Settings Profile", label: "Profile", icon: User },
-                { id: "Settings Security", label: "Security", icon: Shield },
+                // { id: "Settings Security", label: "Security", icon: Shield },
                 { id: "Settings Notifications", label: "Notifications", icon: Bell }
             ]}
           />

@@ -4,7 +4,9 @@ import {
   Users, UserPlus, Trash2, Pencil, Shield, Mail, Phone, MapPin, X, Save 
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api/v1/auth';
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+
+const API_URL = `${VITE_API_URL}/auth`;
 
 export default function UserAdmin() {
   const [users, setUsers] = useState([]);

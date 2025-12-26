@@ -5,7 +5,8 @@ import {
   Trash2, ArrowRight, Activity, Shield, Loader, RefreshCw 
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api/v1/help-requests';
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+const API_URL = `${VITE_API_URL}/help-requests`;
 
 export default function LocalSupportNetwork() {
   const [requests, setRequests] = useState([]);

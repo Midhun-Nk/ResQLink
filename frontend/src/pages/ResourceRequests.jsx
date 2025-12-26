@@ -5,8 +5,9 @@ import {
   CheckCircle, Search, Plus, Archive, ChevronRight, 
   Loader, X, Save, ShieldCheck 
 } from 'lucide-react';
+const VITE_API_URL = import.meta.env.VITE_API_URL;
 
-const API_URL = 'http://localhost:5000/api/resources';
+const API_URL = `${VITE_API_URL}/resources`;
 
 const ResourceRequests = () => {
   const [requests, setRequests] = useState([]); 
