@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from "socket.io-client";
 import { 
-  Siren, MapPin, AlertTriangle, CheckCircle2, ShieldCheck, Mic 
+  Siren, MapPin, AlertTriangle, CheckCircle2, ShieldCheck, Mic, Phone, ShieldAlert
 } from "lucide-react";
 
 // REPLACE WITH YOUR ACTUAL BACKEND URL
@@ -15,32 +15,40 @@ export const SOSView = () => {
   // --- Voice State ---
   const [isRecording, setIsRecording] = useState(false);
   const [voiceText, setVoiceText] = useState("");
+  
+  // --- NEW: AI Response State ---
+  const [aiResponse, setAiResponse] = useState(null); // Stores { advice, contact }
+
   const recognitionRef = useRef(null);
 
-  // 1. Initialize Socket
+  // 1. Initialize Socket & Listeners
   useEffect(() => {
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
+
+    // --- NEW: Listen for AI Response from Server ---
+    newSocket.on("sos_acknowledged", (data) => {
+        console.log("✅ AI Advice Received:", data);
+        setAiResponse(data); // Save the advice and contact info
+    });
+
     return () => newSocket.close();
   }, []);
 
-  // 2. Initialize Speech Recognition (FIXED: Captures all speech)
+  // 2. Initialize Speech Recognition
   useEffect(() => {
-    // Check support
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
-      recognition.interimResults = true; // Essential for real-time capture
+      recognition.interimResults = true;
       recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
-        // Build the transcript from scratch every time to catch corrections
         let currentTranscript = '';
         for (let i = 0; i < event.results.length; i++) {
             currentTranscript += event.results[i][0].transcript;
         }
-        // Save text immediately so nothing is lost
         setVoiceText(currentTranscript);
       };
 
@@ -56,7 +64,8 @@ export const SOSView = () => {
   const startRecording = () => {
     if (recognitionRef.current && status === 'idle') {
       try {
-        setVoiceText(""); // Clear old text
+        setVoiceText("");
+        setAiResponse(null); // Reset previous AI advice
         recognitionRef.current.start();
         setIsRecording(true);
       } catch(e) { console.error("Mic Error:", e); }
@@ -68,13 +77,13 @@ export const SOSView = () => {
       recognitionRef.current.stop();
       setIsRecording(false);
     }
-    // Proceed to confirmation screen after releasing
     if (status === 'idle') setStatus('confirming');
   };
 
   const handleCancel = () => {
     setStatus('idle');
     setVoiceText(""); 
+    setAiResponse(null);
   };
 
   const confirmEmergency = () => {
@@ -85,12 +94,11 @@ export const SOSView = () => {
         const storedUser = localStorage.getItem("user");
         if (storedUser) userData = JSON.parse(storedUser);
     } catch (error) {
-        console.error("Failed to load user data", error);
         userData = { name: "Unknown", id: "Guest" }; 
     }
 
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      alert("Geolocation is not supported");
       setStatus('idle');
       return;
     }
@@ -99,7 +107,6 @@ export const SOSView = () => {
       (position) => {
         const { latitude, longitude } = position.coords;
         
-        // --- PAYLOAD CREATION ---
         const emergencyPayload = {
             userId: userData._id || userData.id || 'guest',
             userName: userData.fullName || userData.userName || 'Anonymous',
@@ -111,7 +118,6 @@ export const SOSView = () => {
             },
             timestamp: new Date().toISOString(),
             status: "CRITICAL",
-            // Use voice text if available
             message: voiceText.trim() ? `VOICE MSG: ${voiceText}` : "SOS Button Triggered",
             voiceNote: voiceText.trim() 
         };
@@ -126,8 +132,7 @@ export const SOSView = () => {
         setTimeout(() => setStatus('sent'), 2000); 
       },
       (error) => {
-        console.error("Error getting location", error);
-        alert("Unable to retrieve location. Please check GPS settings.");
+        alert("Unable to retrieve location.");
         setStatus('idle');
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -136,7 +141,7 @@ export const SOSView = () => {
 
   return (
     <div className={`
-      relative min-h-[600px] w-full flex flex-col items-center justify-center p-6 overflow-hidden rounded-3xl border transition-all duration-500
+      relative min-h-[700px] w-full flex flex-col items-center justify-center p-6 overflow-hidden rounded-3xl border transition-all duration-500
       bg-red-50/50 border-red-100 dark:bg-[#050505] dark:border-white/5
     `}>
       
@@ -209,7 +214,6 @@ export const SOSView = () => {
             
             <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-3">Confirm Alert?</h2>
             
-            {/* Display recorded text if it exists */}
             {voiceText && voiceText.trim().length > 0 && (
                 <div className="mb-4 p-3 bg-slate-100 dark:bg-white/5 rounded-lg text-left">
                     <p className="text-xs font-bold text-slate-500 uppercase mb-1">Voice Note Attached:</p>
@@ -242,64 +246,84 @@ export const SOSView = () => {
       {/* --- LOCATING STATE --- */}
       {status === 'locating' && (
         <div className="z-10 flex flex-col items-center text-center animate-in fade-in">
+           {/* ... (Same as before) ... */}
            <div className="relative w-40 h-40 mb-10 flex items-center justify-center">
              <div className="absolute inset-0 border-4 border-slate-200 dark:border-white/10 rounded-full"></div>
              <div className="absolute inset-0 border-4 border-transparent border-t-red-500 rounded-full animate-spin"></div>
-             <div className="absolute inset-4 border-2 border-slate-100 dark:border-white/5 rounded-full border-dashed animate-spin [animation-duration:5s] reverse"></div>
-             
              <div className="w-20 h-20 bg-white dark:bg-[#111] rounded-full flex items-center justify-center shadow-lg dark:shadow-red-900/20 z-10 relative">
-                <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping"></div>
                 <MapPin size={36} className="text-red-600 dark:text-red-500" />
              </div>
            </div>
            
            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Acquiring GPS...</h3>
            <p className="text-slate-500 dark:text-zinc-500 font-mono text-xs bg-white dark:bg-white/5 px-4 py-1.5 rounded-full border border-slate-200 dark:border-white/10">
-             Attaching Voice Data...
+             Analyzing Situation...
            </p>
         </div>
       )}
 
-      {/* --- SENT / SUCCESS STATE --- */}
+      {/* --- SENT / SUCCESS STATE (UPDATED WITH AI ADVICE) --- */}
       {status === 'sent' && (
-        <div className="z-10 flex flex-col items-center text-center animate-in zoom-in duration-500">
+        <div className="z-10 w-full max-w-md flex flex-col items-center text-center animate-in zoom-in duration-500">
            
-           <div className="w-32 h-32 bg-emerald-500 rounded-full flex items-center justify-center mb-8 shadow-2xl shadow-emerald-500/40 relative">
+           <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-emerald-500/40 relative">
              <div className="absolute inset-0 rounded-full border-2 border-white/30 animate-ping [animation-duration:2s]"></div>
-             <CheckCircle2 size={64} className="text-white drop-shadow-md" />
+             <CheckCircle2 size={40} className="text-white drop-shadow-md" />
            </div>
            
-           <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Help Sent!</h2>
-           <p className="text-slate-600 dark:text-zinc-400 text-sm mb-8 font-medium">Rescue teams have received your alert.</p>
+           <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">Help Sent!</h2>
+
+           {/* 1. EMERGENCY CONTACT CARD (Based on AI Detection) */}
+           {aiResponse?.contact && (
+             <div className="w-full bg-red-600 text-white p-5 rounded-2xl shadow-xl shadow-red-900/20 mb-6 text-left relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Phone size={80} />
+                </div>
+                <p className="text-xs font-bold opacity-80 uppercase tracking-widest mb-1">Recommended Emergency Line</p>
+                <div className="flex justify-between items-end relative z-10">
+                    <div>
+                        <h3 className="text-xl font-bold">{aiResponse.contact.name}</h3>
+                        <p className="text-sm opacity-90">Based on your voice input</p>
+                    </div>
+                    <a href={`tel:${aiResponse.contact.phone}`} className="bg-white text-red-600 px-4 py-2 rounded-lg font-black text-xl hover:scale-105 transition-transform">
+                        {aiResponse.contact.phone}
+                    </a>
+                </div>
+             </div>
+           )}
+
+           {/* 2. AI ADVICE CARD */}
+           {aiResponse?.advice ? (
+             <div className="w-full bg-slate-50 dark:bg-[#111] border border-slate-200 dark:border-white/10 p-5 rounded-2xl mb-8 text-left shadow-sm">
+                <div className="flex items-center gap-2 mb-3 text-slate-800 dark:text-white">
+                    <ShieldAlert size={18} className="text-amber-500" />
+                    <h3 className="font-bold text-sm uppercase tracking-wider">AI Safety Instructions</h3>
+                </div>
+                <div className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap font-medium">
+                    {aiResponse.advice}
+                </div>
+             </div>
+           ) : (
+             // Loading state if AI hasn't responded yet
+             <div className="mb-8 flex items-center gap-2 text-slate-400 text-sm animate-pulse">
+                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                Waiting for safety instructions...
+             </div>
+           )}
            
-           <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 shadow-sm mb-10 w-full max-w-xs relative overflow-hidden text-left">
-              <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-              
-              <div className="mb-4">
-                <p className="text-slate-400 dark:text-zinc-500 text-[10px] uppercase tracking-widest mb-1 font-bold">Location</p>
-                <p className="text-emerald-600 dark:text-emerald-400 font-mono font-bold text-lg flex items-center gap-2">
-                  <MapPin size={18} />
+           <div className="bg-white dark:bg-white/5 p-4 rounded-xl border border-emerald-100 dark:border-emerald-500/20 w-full mb-6 flex justify-between items-center">
+              <div>
+                <p className="text-slate-400 dark:text-zinc-500 text-[10px] uppercase tracking-widest font-bold">Location Shared</p>
+                <p className="text-emerald-600 dark:text-emerald-400 font-mono font-bold text-sm">
                   {coords?.lat.toFixed(4)}, {coords?.lng.toFixed(4)}
                 </p>
               </div>
-
-              {/* Show voice text if it exists */}
-              {voiceText && voiceText.trim().length > 0 && (
-                <div className="pt-4 border-t border-slate-100 dark:border-white/10">
-                   <p className="text-slate-400 dark:text-zinc-500 text-[10px] uppercase tracking-widest mb-2 font-bold">Voice Message Sent</p>
-                   <div className="flex gap-2 items-start">
-                     <Mic size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                     <p className="text-slate-700 dark:text-slate-200 text-sm italic leading-relaxed">
-                       "{voiceText}"
-                     </p>
-                   </div>
-                </div>
-              )}
+              <MapPin size={20} className="text-emerald-500" />
            </div>
            
            <button 
-             onClick={() => { setStatus('idle'); setVoiceText(""); }}
-             className="px-8 py-3.5 rounded-full font-bold transition-all shadow-lg flex items-center gap-2 hover:scale-105 active:scale-95
+             onClick={() => { setStatus('idle'); setVoiceText(""); setAiResponse(null); }}
+             className="w-full py-4 rounded-xl font-bold transition-all shadow-lg flex justify-center items-center gap-2 hover:scale-105 active:scale-95
              bg-slate-900 text-white hover:bg-slate-800
              dark:bg-white dark:text-black dark:hover:bg-zinc-200"
            >
