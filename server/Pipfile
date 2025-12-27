@@ -15,6 +15,7 @@ python-dotenv = "*"
 pyjwt = "*"
 gunicorn = "*"
 whitenoise = "*"
+djangorestframework-simplejwt = "*"
 
 [dev-packages]
 
