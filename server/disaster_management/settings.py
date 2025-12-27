@@ -1,6 +1,7 @@
 from pathlib import Path
 from decouple import config
 import os
+import base64
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,17 +9,19 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # =========================
-# MySQL SSL (Render-safe)
+# MySQL SSL (Base64, Render-safe)
 # =========================
 
-MYSQL_SSL_CA_CONTENT = os.environ.get("DB_SSL_CA")
-
 MYSQL_SSL_CA_PATH = None
-if MYSQL_SSL_CA_CONTENT:
+ca_base64 = os.environ.get("DB_SSL_CA_BASE64")
+
+if ca_base64:
     MYSQL_SSL_CA_PATH = BASE_DIR / "ca.pem"
+
     if not MYSQL_SSL_CA_PATH.exists():
-        with open(MYSQL_SSL_CA_PATH, "w") as f:
-            f.write(MYSQL_SSL_CA_CONTENT)
+        ca_bytes = base64.b64decode(ca_base64)
+        with open(MYSQL_SSL_CA_PATH, "wb") as f:
+            f.write(ca_bytes)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -143,11 +146,12 @@ DATABASES = {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'ssl': {
                 'ca': MYSQL_SSL_CA_PATH
-            } if MYSQL_SSL_CA_PATH else {}
+            }
+        } if MYSQL_SSL_CA_PATH else {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
         },
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

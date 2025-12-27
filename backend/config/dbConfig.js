@@ -3,14 +3,36 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 
-dotenv.config();  // load .env
+dotenv.config();
 
-// Load SSL Certificate
-const caCertPath = process.env.DB_SSL_CA 
-  ? path.join(process.cwd(), process.env.DB_SSL_CA) 
-  : null;
+// ==========================
+// MySQL SSL (Base64, Render-safe)
+// ==========================
 
-const caCert = caCertPath ? fs.readFileSync(caCertPath) : null;
+const BASE_DIR = process.cwd();
+const caBase64 = process.env.DB_SSL_CA_BASE64;
+
+let sslOptions = false;
+
+if (caBase64) {
+  const caPath = path.join(BASE_DIR, "ca.pem");
+
+  // Decode base64 and write cert only once
+  if (!fs.existsSync(caPath)) {
+    const caBuffer = Buffer.from(caBase64, "base64");
+    fs.writeFileSync(caPath, caBuffer);
+  }
+
+  sslOptions = {
+    require: true,
+    rejectUnauthorized: true,
+    ca: fs.readFileSync(caPath),
+  };
+}
+
+// ==========================
+// Sequelize config
+// ==========================
 
 const dbConfig = new Sequelize(
   process.env.DB_NAME,
@@ -18,22 +40,17 @@ const dbConfig = new Sequelize(
   process.env.DB_PASSWORD,
   {
     host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
+    port: process.env.DB_PORT || 3306,
     dialect: "mysql",
     logging: false,
-    dialectOptions: {
-      ssl: caCert
-        ? {
-            require: true,
-            rejectUnauthorized: true,
-            ca: caCert,
-          }
-        : false,
-    },
+    dialectOptions: sslOptions ? { ssl: sslOptions } : {},
   }
 );
 
+// ==========================
 // Connect + Sync
+// ==========================
+
 (async () => {
   try {
     await dbConfig.authenticate();
@@ -42,7 +59,7 @@ const dbConfig = new Sequelize(
     await dbConfig.sync({ alter: false });
     console.log("Models synced successfully 🏁");
   } catch (error) {
-    console.error("DB Connection Failed ❌:", error.message);
+    console.error("DB Connection Failed ❌:", error);
   }
 })();
 
