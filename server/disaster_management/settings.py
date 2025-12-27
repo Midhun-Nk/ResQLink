@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-kisumvwq*xzkumv&84b@9o52$h%n^ks7%qi508s-*7u8%cbc0v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["http://localhost:5174", "localhost", "http://localhost:5173" , "127.0.0.1","*"]
+ALLOWED_HOSTS = ["http://localhost:5174", "localhost", "http://localhost:5173" , "127.0.0.1","*", "resqlink-rbk8.onrender.com", "resqlink-admin.onrender.com"]
 # settings.py
 
 # ... existing CORS settings ...
@@ -59,6 +59,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5173",
+    "https://resqlink-rbk8.onrender.com",
+    "https://resqlink-admin.onrender.com"
 ]
 
 
