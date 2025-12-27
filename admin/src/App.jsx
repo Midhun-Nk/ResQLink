@@ -17,10 +17,10 @@ import LocalSupportNetwork from "./pages/LocalSupportNetwork";
 import ResourceRequests from "./pages/ResourceRequests";
 import ContactsPage from "./pages/ContactsPage";
 import SafetyInfoPage from "./pages/SafetyInfoPage";
-import RescueView from "../../frontend/src/pages/RescueView";
 import NotificationAdmin from "./pages/NotificationAdmin";
 import MapAdmin from "./pages/MapAdmin";
 import UserAdmin from "./pages/UserAdmin";
+import RescueView from "./pages/RescueView";
 export default function App() {
   return (
     <Routes>
