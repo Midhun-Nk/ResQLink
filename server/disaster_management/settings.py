@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-kisumvwq*xzkumv&84b@9o52$h%n^ks7%qi508s-*7u8%cbc0v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["http://localhost:5174", "localhost", "http://localhost:5173" , "127.0.0.1"]
+ALLOWED_HOSTS = ["http://localhost:5174", "localhost", "http://localhost:5173" , "127.0.0.1","*"]
 # settings.py
 
 # ... existing CORS settings ...
@@ -91,6 +91,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
@@ -182,6 +183,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -13,6 +13,8 @@ bcrypt = "*"
 django-bcrypt = "*"
 python-dotenv = "*"
 pyjwt = "*"
+gunicorn = "*"
+whitenoise = "*"
 
 [dev-packages]
 
